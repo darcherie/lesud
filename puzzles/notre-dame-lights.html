@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notre Dame de la Garde - Light Show</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/puzzle.css">
+    <style>
+        .rhythm-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .game-wrapper {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+            position: relative;
+        }
+
+        .game-area {
+            position: relative;
+            width: 350px;
+            height: 400px;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            border: 4px solid var(--primary);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .notredame-image {
+            width: 300px;
+            height: 400px;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .notredame-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        /* Beam source sprites on Notre-Dame */
+        .beam-source-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .beam-source {
+            position: absolute;
+            width: 120px;
+            height: 200px;
+            opacity: 0;
+            transition: opacity 0.1s;
+            bottom: 5%;
+        }
+
+        .beam-source.active {
+            opacity: 1;
+        }
+
+        /* Lane positions - all at same vertical, spaced horizontally (shifted left) */
+        .beam-source[data-lane="0"] { left: -5%; bottom: 2%; }   /* Blue - slightly lower */
+        .beam-source[data-lane="1"] { left: 18%; }  /* Green (F) */
+        .beam-source[data-lane="2"] { left: 41%; }  /* Yellow (J) */
+        .beam-source[data-lane="3"] { left: 64%; bottom: 2%; }  /* Red - slightly lower */
+
+        /* Blue beam - 30° up-left */
+        .beam-source[data-lane="0"] svg {
+            transform: rotate(-30deg);
+        }
+
+        /* Green and Yellow - straight up */
+        .beam-source[data-lane="1"] svg,
+        .beam-source[data-lane="2"] svg {
+            transform: rotate(0deg);
+        }
+
+        /* Red beam - 30° up-right */
+        .beam-source[data-lane="3"] svg {
+            transform: rotate(30deg);
+        }
+
+        .lanes {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+        }
+
+        .lane {
+            flex: 1;
+            border-right: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+        }
+
+        .lane:last-child {
+            border-right: none;
+        }
+
+        .target-zone {
+            position: absolute;
+            bottom: 80px;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            border-top: 2px solid rgba(255,255,255,0.3);
+            border-bottom: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .key-indicator {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: rgba(255,255,255,0.5);
+            text-shadow: 0 0 10px currentColor;
+        }
+
+        .lane:nth-child(1) .key-indicator { color: var(--beam-blue, #3b82f6); }
+        .lane:nth-child(2) .key-indicator { color: var(--beam-green, #22c55e); }
+        .lane:nth-child(3) .key-indicator { color: var(--beam-yellow, #eab308); }
+        .lane:nth-child(4) .key-indicator { color: var(--beam-red, #ef4444); }
+
+        .beam {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 40px;
+            pointer-events: none;
+        }
+
+        .beam img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            image-rendering: pixelated;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            width: 400px;
+            padding: 1rem;
+            background: var(--surface);
+            border-radius: 8px;
+        }
+
+        .score-display {
+            font-size: 1.2rem;
+        }
+
+        .combo-display {
+            color: var(--secondary);
+        }
+
+        .progress-container {
+            width: 400px;
+            height: 8px;
+            background: var(--surface-light);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            width: 0%;
+            transition: width 0.1s;
+        }
+
+        .key-hints {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .btn-play {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.7rem;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 4px 4px 0 #1e40af;
+            transition: all 0.2s;
+        }
+
+        .btn-play:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 #1e40af;
+        }
+
+        .btn-play:active {
+            transform: translate(0, 0);
+            box-shadow: 2px 2px 0 #1e40af;
+        }
+
+        .key-hint {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .key-hint span {
+            padding: 0.5rem 1rem;
+            background: var(--surface-light);
+            border-radius: 8px;
+            font-size: 1.2rem;
+        }
+
+        .btn-play {
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn-play:hover {
+            transform: scale(1.05);
+        }
+
+        .hit-feedback {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.2rem;
+            font-weight: bold;
+            opacity: 0;
+            pointer-events: none;
+            text-shadow: 0 0 10px currentColor;
+        }
+
+        .hit-feedback.perfect {
+            color: #22c55e;
+            animation: hitPop 0.5s ease;
+        }
+
+        .hit-feedback.good {
+            color: #eab308;
+            animation: hitPop 0.5s ease;
+        }
+
+        .hit-feedback.miss {
+            color: #ef4444;
+            animation: hitPop 0.5s ease;
+        }
+
+        @keyframes hitPop {
+            0% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-30px); }
+        }
+
+        .result-stats {
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .result-stats p {
+            margin: 0.5rem 0;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="retour-btn">Retourner au port</a>
+    <div class="container">
+        <header>
+            <h1>Notre Dame de la Garde</h1>
+            <p class="subtitle">Crée un meilleur spectacle de lumière que celui qu'on a vu !</p>
+        </header>
+
+        <main>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+                    <div class="stats-bar" style="width: 350px;">
+                        <div class="score-display">Score: <strong id="score">0</strong></div>
+                        <div class="combo-display">Combo: <strong id="combo">0</strong></div>
+                        <div>Précision: <strong id="accuracy">100%</strong></div>
+                    </div>
+
+                    <div class="progress-container" style="width: 350px;">
+                        <div class="progress-fill" id="progress"></div>
+                    </div>
+
+                    <div class="game-wrapper">
+                        <div class="game-area" id="game-area">
+                            <div class="lanes">
+                                <div class="lane" data-lane="0">
+                                    <div class="target-zone"></div>
+                                    <div class="key-indicator">D</div>
+                                </div>
+                                <div class="lane" data-lane="1">
+                                    <div class="target-zone"></div>
+                                    <div class="key-indicator">F</div>
+                                </div>
+                                <div class="lane" data-lane="2">
+                                    <div class="target-zone"></div>
+                                    <div class="key-indicator">J</div>
+                                </div>
+                                <div class="lane" data-lane="3">
+                                    <div class="target-zone"></div>
+                                    <div class="key-indicator">K</div>
+                                </div>
+                            </div>
+                            <div class="hit-feedback" id="hit-feedback"></div>
+                        </div>
+                        <div class="notredame-image">
+                            <img src="../assets/images/notredame.png" alt="Notre-Dame de la Garde">
+                            <div class="beam-source-container">
+                                <div class="beam-source" data-lane="0">
+                                    <svg viewBox="0 0 40 200" width="120" height="200">
+                                        <defs>
+                                            <linearGradient id="blueGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+                                                <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+                                                <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:0.3" />
+                                            </linearGradient>
+                                        </defs>
+                                        <polygon points="15,200 25,200 40,0 0,0" fill="url(#blueGrad)" opacity="0.8"/>
+                                    </svg>
+                                </div>
+                                <div class="beam-source" data-lane="1">
+                                    <svg viewBox="0 0 40 200" width="120" height="200">
+                                        <defs>
+                                            <linearGradient id="greenGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+                                                <stop offset="0%" style="stop-color:#22c55e;stop-opacity:1" />
+                                                <stop offset="100%" style="stop-color:#22c55e;stop-opacity:0.3" />
+                                            </linearGradient>
+                                        </defs>
+                                        <polygon points="15,200 25,200 40,0 0,0" fill="url(#greenGrad)" opacity="0.8"/>
+                                    </svg>
+                                </div>
+                                <div class="beam-source" data-lane="2">
+                                    <svg viewBox="0 0 40 200" width="120" height="200">
+                                        <defs>
+                                            <linearGradient id="yellowGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+                                                <stop offset="0%" style="stop-color:#eab308;stop-opacity:1" />
+                                                <stop offset="100%" style="stop-color:#eab308;stop-opacity:0.3" />
+                                            </linearGradient>
+                                        </defs>
+                                        <polygon points="15,200 25,200 40,0 0,0" fill="url(#yellowGrad)" opacity="0.8"/>
+                                    </svg>
+                                </div>
+                                <div class="beam-source" data-lane="3">
+                                    <svg viewBox="0 0 40 200" width="120" height="200">
+                                        <defs>
+                                            <linearGradient id="redGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+                                                <stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" />
+                                                <stop offset="100%" style="stop-color:#ef4444;stop-opacity:0.3" />
+                                            </linearGradient>
+                                        </defs>
+                                        <polygon points="15,200 25,200 40,0 0,0" fill="url(#redGrad)" opacity="0.8"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn-play" id="start-btn" style="margin-top: 1rem;">Commencer</button>
+
+                    <div id="feedback" class="feedback"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Success Overlay -->
+    <div class="success-overlay" id="success-overlay">
+        <div class="success-box">
+            <h2>Bravo !</h2>
+            <p>Quel sens du rythme, quels réflexes...</p>
+            <a href="../index.html" class="retour-btn">Retourner au port</a>
+        </div>
+    </div>
+
+    <!-- Fail Overlay -->
+    <div class="success-overlay" id="fail-overlay" style="display: none;">
+        <div class="success-box">
+            <h2>Oops...</h2>
+            <p>Ré-essaie ?</p>
+            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1rem;">
+                <button class="btn-play" id="retry-btn" style="background: linear-gradient(135deg, #22c55e, #16a34a); padding: 1rem 2rem; font-family: 'Press Start 2P', monospace; font-size: 0.7rem; border-radius: 8px; border: none; color: white; cursor: pointer; box-shadow: 4px 4px 0 #15803d;">Oui</button>
+                <a href="../index.html" style="background: linear-gradient(135deg, #ef4444, #dc2626); padding: 1rem 2rem; font-family: 'Press Start 2P', monospace; font-size: 0.7rem; border-radius: 8px; border: none; color: white; text-decoration: none; cursor: pointer; box-shadow: 4px 4px 0 #b91c1c;">Non</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/puzzle-nav.js"></script>
+    <script>
+        // Beam colors mapped to lanes
+        // Dash line beams for game area (falling notes)
+        const BEAMS = [
+            { lane: 0, color: 'blue', image: '../assets/images/beam-blue.png' },
+            { lane: 1, color: 'green', image: '../assets/images/beam-green.png' },
+            { lane: 2, color: 'yellow', image: '../assets/images/beam-yellow.png' },
+            { lane: 3, color: 'red', image: '../assets/images/beam-red.png' }
+        ];
+
+        // Beam source sprites for Notre-Dame overlay
+        const BEAM_SOURCES = [
+            { lane: 0, image: '../assets/images/blue-beam.png' },
+            { lane: 1, image: '../assets/images/beam-green.png' },
+            { lane: 2, image: '../assets/images/beam-yellow.png' },
+            { lane: 3, image: '../assets/images/red-beam.png' }
+        ];
+
+        // Beat map - randomized, unpredictable pattern
+        // Format: { time: ms, lane: 0-3 }
+        const BEAT_MAP = [
+            { time: 800, lane: 2 },
+            { time: 1200, lane: 0 },
+            { time: 1600, lane: 3 },
+            { time: 1900, lane: 1 },
+            { time: 2300, lane: 0 },
+            { time: 2300, lane: 2 },
+            { time: 2800, lane: 3 },
+            { time: 3100, lane: 1 },
+            { time: 3400, lane: 0 },
+            { time: 3700, lane: 2 },
+            { time: 3700, lane: 3 },
+            { time: 4200, lane: 1 },
+            { time: 4600, lane: 0 },
+            { time: 4900, lane: 2 },
+            { time: 5200, lane: 3 },
+            { time: 5500, lane: 1 },
+            { time: 5500, lane: 2 },
+            { time: 6000, lane: 0 },
+            { time: 6400, lane: 3 },
+            { time: 6700, lane: 1 },
+            { time: 7100, lane: 2 },
+            { time: 7400, lane: 0 },
+            { time: 7400, lane: 1 },
+            { time: 7400, lane: 3 },
+            { time: 7900, lane: 2 },
+            { time: 8300, lane: 0 },
+            { time: 8600, lane: 3 },
+            { time: 9000, lane: 1 },
+            { time: 9400, lane: 2 },
+            { time: 9700, lane: 0 },
+            { time: 10000, lane: 3 },
+            { time: 10000, lane: 1 },
+            { time: 10500, lane: 2 },
+            { time: 10900, lane: 0 },
+            { time: 11300, lane: 3 },
+            { time: 11700, lane: 1 },
+            { time: 12000, lane: 0 },
+            { time: 12000, lane: 2 },
+            { time: 12500, lane: 3 },
+            { time: 12900, lane: 1 },
+            { time: 13300, lane: 2 },
+            { time: 13600, lane: 0 },
+            { time: 14000, lane: 1 },
+            { time: 14000, lane: 3 },
+            { time: 14500, lane: 2 },
+            { time: 14900, lane: 0 },
+            { time: 15300, lane: 3 },
+            { time: 15700, lane: 1 },
+            { time: 15700, lane: 2 },
+            { time: 16200, lane: 0 },
+            { time: 16600, lane: 3 },
+            { time: 16900, lane: 2 },
+            { time: 17300, lane: 1 },
+            { time: 17700, lane: 0 },
+            { time: 17700, lane: 2 },
+            { time: 17700, lane: 3 },
+            { time: 18200, lane: 1 },
+            { time: 18600, lane: 0 },
+            { time: 19000, lane: 3 },
+            { time: 19400, lane: 2 },
+            { time: 19800, lane: 1 },
+            { time: 19800, lane: 0 },
+            { time: 20300, lane: 3 },
+            { time: 20700, lane: 2 },
+            { time: 21100, lane: 1 },
+            { time: 21500, lane: 0 },
+            { time: 21500, lane: 3 },
+            { time: 22000, lane: 2 },
+            { time: 22400, lane: 1 },
+            { time: 22800, lane: 0 },
+            { time: 23200, lane: 3 },
+            { time: 23600, lane: 2 },
+            { time: 23600, lane: 1 },
+            { time: 24100, lane: 0 },
+            { time: 24500, lane: 3 },
+            { time: 24900, lane: 1 },
+            { time: 25300, lane: 2 },
+            { time: 25300, lane: 0 },
+            { time: 25300, lane: 3 },
+            { time: 25800, lane: 1 },
+            { time: 26200, lane: 2 },
+            { time: 26600, lane: 0 },
+            { time: 27000, lane: 3 },
+            { time: 27400, lane: 1 },
+            { time: 27800, lane: 2 },
+            { time: 27800, lane: 0 },
+            { time: 28300, lane: 3 },
+            { time: 28700, lane: 1 },
+            { time: 29100, lane: 0 },
+            { time: 29100, lane: 2 },
+            { time: 29600, lane: 3 },
+            { time: 30000, lane: 1 },
+            { time: 30400, lane: 2 },
+            { time: 30800, lane: 0 },
+            { time: 30800, lane: 1 },
+            { time: 30800, lane: 3 },
+            { time: 31300, lane: 2 },
+            { time: 31700, lane: 0 },
+            { time: 32100, lane: 3 },
+            { time: 32500, lane: 1 },
+            { time: 32900, lane: 2 },
+            { time: 32900, lane: 0 },
+            { time: 33400, lane: 3 },
+            { time: 33800, lane: 1 },
+            { time: 34200, lane: 2 },
+            { time: 34600, lane: 0 },
+            { time: 34600, lane: 1 },
+            { time: 34600, lane: 2 },
+            { time: 35100, lane: 3 },
+            { time: 35500, lane: 0 },
+            { time: 35900, lane: 1 },
+            { time: 36300, lane: 2 },
+            { time: 36700, lane: 3 },
+            { time: 36700, lane: 0 },
+            { time: 37200, lane: 1 },
+            { time: 37600, lane: 2 },
+            { time: 38000, lane: 3 },
+            { time: 38000, lane: 1 },
+            { time: 38500, lane: 0 },
+            { time: 38900, lane: 2 },
+            { time: 39300, lane: 1 },
+            { time: 39700, lane: 3 },
+            { time: 40100, lane: 0 },
+            { time: 40100, lane: 2 },
+            { time: 40600, lane: 1 },
+            { time: 41000, lane: 3 },
+            { time: 41400, lane: 0 },
+            { time: 41800, lane: 2 },
+            { time: 41800, lane: 1 },
+            { time: 42300, lane: 3 },
+            { time: 42700, lane: 0 },
+            { time: 43100, lane: 1 },
+            { time: 43500, lane: 2 },
+            { time: 43900, lane: 3 },
+            { time: 43900, lane: 0 },
+            { time: 43900, lane: 1 },
+            { time: 43900, lane: 2 },
+            { time: 44400, lane: 3 }
+        ];
+
+        // Game state
+        let gameRunning = false;
+        let score = 0;
+        let combo = 0;
+        let maxCombo = 0;
+        let hits = 0;
+        let misses = 0;
+        let startTime = 0;
+        let beams = [];
+        let animationId = null;
+
+        // Timing
+        const BEAM_SPEED = 200; // pixels per second
+        const TARGET_Y = 400 - 80 - 30; // height - target zone height - offset
+        const PERFECT_WINDOW = 50; // ms
+        const GOOD_WINDOW = 100; // ms
+
+        // Key mapping
+        const KEYS = { 'd': 0, 'f': 1, 'j': 2, 'k': 3 };
+        const keyPressed = {};
+
+        function startGame() {
+            gameRunning = true;
+            score = 0;
+            combo = 0;
+            maxCombo = 0;
+            hits = 0;
+            misses = 0;
+            beams = [];
+            startTime = Date.now();
+
+            document.getElementById('start-btn').style.display = 'none';
+            document.getElementById('feedback').className = 'feedback';
+            document.getElementById('feedback').textContent = '';
+
+            updateStats();
+            gameLoop();
+        }
+
+        function gameLoop() {
+            if (!gameRunning) return;
+
+            const elapsed = Date.now() - startTime;
+
+            // Spawn new beams from beat map
+            BEAT_MAP.forEach(beat => {
+                if (!beat.spawned && beat.time <= elapsed + 2000) {
+                    spawnBeam(beat);
+                    beat.spawned = true;
+                }
+            });
+
+            // Update beam positions
+            updateBeams();
+
+            // Update progress
+            const progress = Math.min(100, (elapsed / BEAT_MAP[BEAT_MAP.length - 1].time) * 100);
+            document.getElementById('progress').style.width = progress + '%';
+
+            // Check if game is done
+            if (elapsed > BEAT_MAP[BEAT_MAP.length - 1].time + 2000 && beams.length === 0) {
+                endGame();
+                return;
+            }
+
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        function spawnBeam(beat) {
+            const lane = document.querySelector(`.lane[data-lane="${beat.lane}"]`);
+            const beam = document.createElement('div');
+            beam.className = 'beam';
+            beam.dataset.lane = beat.lane;
+            beam.dataset.hitTime = beat.time;
+            beam.innerHTML = `<img src="${BEAMS[beat.lane].image}" alt="${BEAMS[beat.lane].color}">`;
+            lane.appendChild(beam);
+            beams.push({ element: beam, lane: beat.lane, hitTime: beat.time, hit: false });
+        }
+
+        function flashBeamSource(lane) {
+            const beamSource = document.querySelector(`.beam-source[data-lane="${lane}"]`);
+            if (beamSource) {
+                beamSource.classList.add('active');
+                // Flash briefly then fade
+                setTimeout(() => {
+                    beamSource.classList.remove('active');
+                }, 150);
+            }
+        }
+
+        function updateBeams() {
+            const elapsed = Date.now() - startTime;
+            const fallTime = TARGET_Y / BEAM_SPEED * 1000; // time to fall to target
+
+            // Remove beams that fell past - iterate backwards to splice safely
+            for (let i = beams.length - 1; i >= 0; i--) {
+                const beam = beams[i];
+                const progress = (elapsed - beam.hitTime + fallTime) / fallTime;
+                const y = progress * TARGET_Y;
+                beam.element.style.top = y + 'px';
+
+                // Remove beams that fell past
+                if (y > TARGET_Y + 100) {
+                    beam.element.remove();
+                    beams.splice(i, 1);
+                    if (!beam.hit) {
+                        misses++;
+                        combo = 0;
+                        showFeedback('miss', beam.lane);
+                        updateStats();
+                        // Check if precision dropped below 50%
+                        const total = hits + misses;
+                        const accuracy = total > 0 ? Math.round((hits / total) * 100) : 100;
+                        if (accuracy < 50) {
+                            endGame();
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        function hitLane(lane) {
+            if (!gameRunning) return;
+
+            const elapsed = Date.now() - startTime;
+
+            // Find closest beam in this lane that's near the target zone
+            let closestBeam = null;
+            let closestDiff = Infinity;
+
+            beams.forEach(beam => {
+                if (beam.lane === lane && !beam.hit) {
+                    // Check if beam is within hitting range (near target zone)
+                    const beamY = parseFloat(beam.element.style.top) || 0;
+                    const distanceFromTarget = Math.abs(beamY - TARGET_Y);
+                    
+                    // Use distance from target zone for timing
+                    if (distanceFromTarget < closestDiff) {
+                        closestDiff = distanceFromTarget;
+                        closestBeam = beam;
+                    }
+                }
+            });
+
+            // Hit if beam is within 50px of target zone center
+            if (closestBeam && closestDiff < 50) {
+                closestBeam.hit = true;
+                closestBeam.element.remove();
+                beams.splice(beams.indexOf(closestBeam), 1);
+
+                // Flash the beam source on Notre-Dame
+                flashBeamSource(closestBeam.lane);
+
+                if (closestDiff < 20) {
+                    score += 100 * (1 + combo * 0.1);
+                    showFeedback('perfect', lane);
+                } else {
+                    score += 50 * (1 + combo * 0.05);
+                    showFeedback('good', lane);
+                }
+
+                hits++;
+                combo++;
+                maxCombo = Math.max(maxCombo, combo);
+            } else {
+                misses++;
+                combo = 0;
+                showFeedback('miss', lane);
+            }
+
+            updateStats();
+        }
+
+        function showFeedback(type, lane) {
+            const feedback = document.getElementById('hit-feedback');
+            feedback.className = 'hit-feedback ' + type;
+            feedback.textContent = type === 'perfect' ? 'Parfait!' : type === 'good' ? 'Bien!' : 'Raté...';
+            feedback.style.animation = 'none';
+            feedback.offsetHeight; // trigger reflow
+            feedback.style.animation = 'hitPop 0.5s ease';
+        }
+
+        function updateStats() {
+            document.getElementById('score').textContent = Math.floor(score);
+            document.getElementById('combo').textContent = combo;
+
+            const total = hits + misses;
+            const accuracy = total > 0 ? Math.round((hits / total) * 100) : 100;
+            document.getElementById('accuracy').textContent = accuracy + '%';
+        }
+
+        function endGame() {
+            gameRunning = false;
+            cancelAnimationFrame(animationId);
+
+            const total = hits + misses;
+            const accuracy = total > 0 ? Math.round((hits / total) * 100) : 0;
+
+            const startBtn = document.getElementById('start-btn');
+
+            if (accuracy >= 70) {
+                // Success - show overlay
+                document.getElementById('success-overlay').classList.add('show');
+            } else {
+                // Fail - show retry overlay
+                document.getElementById('fail-overlay').style.display = 'flex';
+            }
+        }
+
+        // Event listeners
+        document.getElementById('start-btn').addEventListener('click', () => {
+            // Reset beat map spawned state
+            BEAT_MAP.forEach(beat => beat.spawned = false);
+            // Clear existing beam elements from lanes
+            document.querySelectorAll('.beam').forEach(beam => beam.remove());
+            startGame();
+        });
+
+        document.getElementById('retry-btn').addEventListener('click', () => {
+            document.getElementById('fail-overlay').style.display = 'none';
+            BEAT_MAP.forEach(beat => beat.spawned = false);
+            // Clear existing beam elements from lanes
+            document.querySelectorAll('.beam').forEach(beam => beam.remove());
+            startGame();
+        });
+
+        // Keyboard input
+        document.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            if (KEYS[key] !== undefined && !keyPressed[key]) {
+                keyPressed[key] = true;
+                hitLane(KEYS[key]);
+
+                // Visual feedback on key indicator
+                const lane = document.querySelector(`.lane[data-lane="${KEYS[key]}"] .key-indicator`);
+                lane.style.transform = 'scale(1.2)';
+                lane.style.color = '#fff';
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            const key = e.key.toLowerCase();
+            if (KEYS[key] !== undefined) {
+                keyPressed[key] = false;
+                const lane = document.querySelector(`.lane[data-lane="${KEYS[key]}"] .key-indicator`);
+                lane.style.transform = 'scale(1)';
+                lane.style.color = '';
+            }
+        });
+    </script>
+    <script src="../assets/js/puzzle-complete.js"></script>
+</body>
+</html>

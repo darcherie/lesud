@@ -1,0 +1,16 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Development/agent files
+AGENTS/
+*.py
+README.md
+IDEAS.md
+
+# Inspiration/reference images
+assets/inspiration/
+
+# Temp files
+*.tmp
+*.bak

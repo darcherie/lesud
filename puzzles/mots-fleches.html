@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mots Fléchés - Le Petit Aixois</title>
+    <link rel="stylesheet" href="../assets/css/newspaper.css?v=7">
+</head>
+<body>
+    <a href="../index.html" class="retour-btn">Retourner au port</a>
+    <div class="newspaper-bg"></div>
+    
+    <div class="container">
+        <header class="newspaper-header">
+            <h1 class="newspaper-title">Le Meyreuillais</h1>
+            <p class="newspaper-date" id="newspaper-date"></p>
+            <script>
+                const today = new Date();
+                const options = { day: 'numeric', month: 'long', year: 'numeric' };
+                const formatted = today.toLocaleDateString('fr-FR', options);
+                document.getElementById('newspaper-date').textContent = formatted + ' • Édition Spéciale Anniversaire';
+            </script>
+        </header>
+
+        <main>
+            <div class="mots-container">
+                <div class="grid-wrapper">
+                    <div id="fleches-grid" class="fleches-grid"></div>
+                </div>
+                
+                <div class="clues-panel">
+                    <div class="clues-tabs">
+                        <button class="tab-btn active" data-tab="vertical">↓ Vertical</button>
+                        <button class="tab-btn" data-tab="horizontal">→ Horizontal</button>
+                    </div>
+                    <div class="clues-content">
+                        <div class="clues-section" id="horizontal-clues"></div>
+                        <div class="clues-section active" id="vertical-clues"></div>
+                    </div>
+                    <div class="check-section">
+                        <button id="check-btn" class="btn-primary">Vérifier</button>
+                        <button id="reveal-btn" class="btn-secondary">Révéler une lettre</button>
+                        <div id="feedback" class="feedback"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../assets/js/puzzle-nav.js"></script>
+    <script>
+        // ============================================
+        // PUZZLE CONFIG - Mots fléchés pour Vincent
+        // Generated from grid_answers.csv + grid_clues.csv
+        // ============================================
+        const GRID_ROWS = 28;
+        const GRID_COLS = 31;
+        const ROW_OFFSET = 1; // Shift grid down by 1 row
+
+        const WORDS = [
+            { word: 'ULTIME', direction: 'horizontal', startRow: 3, startCol: 17, clue: 'qui vient en tout dernier lieu dans le temps' },
+            { word: 'TAVERNE', direction: 'horizontal', startRow: 4, startCol: 24, clue: 'ce que tu gères avec Maëva de temps en temps' },
+            { word: 'MER', direction: 'horizontal', startRow: 5, startCol: 16, clue: 'on peut plonger dedans' },
+            { word: 'NOTES', direction: 'horizontal', startRow: 5, startCol: 21, clue: '* ce que tu as donné à tes étudiants hier après avoir donné 2' },
+            { word: 'HAMAC', direction: 'horizontal', startRow: 6, startCol: 6, clue: 'lit pour un matelot' },
+            { word: 'AAA', direction: 'horizontal', startRow: 6, startCol: 16, clue: 'type de pile que tu m\'as prêté pour le projecteur' },
+            { word: 'RASER', direction: 'horizontal', startRow: 6, startCol: 23, clue: 'ce que tu te fais de temps en temps pour que ta barbe me gratte' },
+            { word: 'EPINGLES', direction: 'horizontal', startRow: 7, startCol: 14, clue: 'fleur orange spéciale qui a traversé la manche en avion, PELOTE d\'___' },
+            { word: 'SOL', direction: 'horizontal', startRow: 8, startCol: 14, clue: 'du carrelage, par exemple' },
+            { word: 'OUEST', direction: 'horizontal', startRow: 8, startCol: 22, clue: 'sens boussole du coucher de soleil' },
+            { word: 'EON', direction: 'horizontal', startRow: 9, startCol: 1, clue: 'une très longue période de temps' },
+            { word: 'DOCTEUR', direction: 'horizontal', startRow: 9, startCol: 6, clue: 'ton bientôt titre' },
+            { word: 'TER', direction: 'horizontal', startRow: 9, startCol: 20, clue: 'train local je peux prendre pour venir te voir' },
+            { word: 'CORNEMUSE', direction: 'horizontal', startRow: 11, startCol: 11, clue: 'instrument typique d\'Écosse' },
+            { word: 'MANTECADOS', direction: 'horizontal', startRow: 12, startCol: 0, clue: 'biscuit que ta mère fait à Noël' },
+            { word: 'SEEN', direction: 'horizontal', startRow: 12, startCol: 21, clue: 'participe passé de \"voir\" (ang.)' },
+            { word: 'CEREGE', direction: 'horizontal', startRow: 14, startCol: 1, clue: 'nom de l\'organisation dans laquelle tu es actuellement' },
+            { word: 'GUARIMPRIMANTE', direction: 'horizontal', startRow: 14, startCol: 11, clue: 'ta machine qui travaille avec du filament' },
+            { word: 'SUIT', direction: 'horizontal', startRow: 15, startCol: 15, clue: 'tenue pour une occasion spéciale (ang.)' },
+            { word: 'EN', direction: 'horizontal', startRow: 16, startCol: 16, clue: '** ville où tu es (avec 43 et 19)' },
+            { word: 'SEPT', direction: 'horizontal', startRow: 16, startCol: 21, clue: 'racine carré de 49' },
+            { word: 'MABICHE', direction: 'horizontal', startRow: 17, startCol: 3, clue: 'à qui chanter \"ich liebe dich\" (deux mots)' },
+            { word: 'COCOON', direction: 'horizontal', startRow: 18, startCol: 20, clue: 'tu me manques comme son ___ manque à un papillon' },
+            { word: 'ESPERANCE', direction: 'horizontal', startRow: 19, startCol: 6, clue: 'ta copine en français' },
+            { word: 'PUB', direction: 'horizontal', startRow: 21, startCol: 14, clue: 'bon endroit pour prendre un verre' },
+            { word: 'AIX', direction: 'horizontal', startRow: 21, startCol: 21, clue: '** ville où tu es (avec 35 et 19)' },
+            { word: 'DODOS', direction: 'horizontal', startRow: 22, startCol: 7, clue: 'oiseau disparu, peluche, et toi' },
+            { word: 'CANARD', direction: 'horizontal', startRow: 22, startCol: 13, clue: 'ça casse pas trois pattes à un ___' },
+            { word: 'GO', direction: 'horizontal', startRow: 23, startCol: 14, clue: 'opposé de STOP (ang.)' },
+            { word: 'LONDRES', direction: 'horizontal', startRow: 24, startCol: 6, clue: 'ville à 1 000 km (mais qui compte…)' },
+            { word: 'KISSES', direction: 'horizontal', startRow: 24, startCol: 22, clue: 'ce avec quoi je te couvrirais si j\'étais là (ang.)' },
+            { word: 'BEANS', direction: 'horizontal', startRow: 25, startCol: 13, clue: 'petit déjeuner britannique (ang.)' },
+            { word: 'ZANAHORIAS', direction: 'horizontal', startRow: 27, startCol: 8, clue: 'ni carottas ni carottos' },
+            { word: 'PROVENCE', direction: 'vertical', startRow: 7, startCol: 2, clue: '** ville où tu es (avec 43 et 35)' },
+            { word: 'MADELEINES', direction: 'vertical', startRow: 11, startCol: 6, clue: 'ta spécialité en patisserie' },
+            { word: 'SHALLOW', direction: 'vertical', startRow: 4, startCol: 7, clue: 'ta spécialité en guitare' },
+            { word: 'POLOGNE', direction: 'vertical', startRow: 19, startCol: 8, clue: 'destination de rêve pour un geek de camps de concentration' },
+            { word: 'SESAME', direction: 'vertical', startRow: 12, startCol: 9, clue: 'graines qui peuvent sauver tout plat moche en garniture' },
+            { word: 'CONE', direction: 'vertical', startRow: 6, startCol: 10, clue: 'forme de crane d\'un Buckingham Palace Guard' },
+            { word: 'OURSIN', direction: 'vertical', startRow: 22, startCol: 10, clue: 'tu as une squelette de cet animal dans ta chambre' },
+            { word: 'MARIONDUFRESNE', direction: 'vertical', startRow: 7, startCol: 12, clue: 'le plus grand navire de la flotte océanographique française' },
+            { word: 'BIVALVES', direction: 'vertical', startRow: 1, startCol: 14, clue: 'famille marine pour étudier le passé' },
+            { word: 'ESPAGNE', direction: 'vertical', startRow: 19, startCol: 14, clue: 'déstination éclipse 2026' },
+            { word: 'POULENAIS', direction: 'vertical', startRow: 7, startCol: 15, clue: 'langage de poules' },
+            { word: 'UNO', direction: 'vertical', startRow: 21, startCol: 15, clue: 'jeu de cartes où il faut parler Éspagnol' },
+            { word: 'MAIL', direction: 'vertical', startRow: 5, startCol: 16, clue: 'quoi signer avec \"bien cordialement\"' },
+            { word: 'MUE', direction: 'vertical', startRow: 14, startCol: 16, clue: 'renouvellement de la peau/poils/plumes d\'un animal' },
+            { word: 'BA', direction: 'vertical', startRow: 21, startCol: 16, clue: 'bruit que fait un mouton (au moins à mon avis)' },
+            { word: 'CERULEAN', direction: 'vertical', startRow: 0, startCol: 17, clue: 'couleur du ciel selon le diable' },
+            { word: 'PINKY', direction: 'vertical', startRow: 14, startCol: 17, clue: 'le plus petit doigt (ang.)' },
+            { word: 'RUSSES', direction: 'vertical', startRow: 22, startCol: 17, clue: 'ceux qui aiment prendre du champagne pour le petit dej, selon ton père' },
+            { word: 'RAGE', direction: 'vertical', startRow: 5, startCol: 18, clue: 'ce qu\'on ressent quand on nous coupe la route' },
+            { word: 'SHORT', direction: 'vertical', startRow: 11, startCol: 18, clue: 'adjectif qu\'on peut donner à du pain en Écosse (ang.)' },
+            { word: 'EXAMEN', direction: 'vertical', startRow: 0, startCol: 21, clue: '* ce que tu as donné à tes étudiants avant 10' },
+            { word: 'SHAKSHOUKA', direction: 'vertical', startRow: 12, startCol: 21, clue: 'vraie écriture d\'un plat africain aux tomates, poivrons, œufs' },
+            { word: 'ORAGE', direction: 'vertical', startRow: 8, startCol: 22, clue: 'temps cosy pour rester sous la couette' },
+            { word: 'TROU', direction: 'vertical', startRow: 5, startCol: 23, clue: 'ce que l\'on crée quand on creuse, par exemple' },
+            { word: 'XAVIER', direction: 'vertical', startRow: 21, startCol: 23, clue: 'instructeur de plongée en Malaisie' },
+            { word: 'TEA', direction: 'vertical', startRow: 4, startCol: 24, clue: 'boisson chaude à boire avec des mini gâteaux et sandwichs (ang.)' },
+            { word: 'MANGENT', direction: 'vertical', startRow: 10, startCol: 24, clue: '\"un chat, une tortue, des poissons rouges, ils ne ___ rien\" selon Feu Chatterton' },
+            { word: 'ASSIS', direction: 'vertical', startRow: 4, startCol: 25, clue: 'position confortable pour faire ce puzzle, par exemple' },
+            { word: 'NATURISTE', direction: 'vertical', startRow: 18, startCol: 25, clue: 'type de plage que l\'on peut retrouver sur la côte bleue' },
+        ];
+
+        // ============================================
+        // GRID RENDERING
+        // ============================================
+
+        const cellData = {};
+        const clueNumbers = {};
+
+        // First pass: mark all cells that have letters
+        WORDS.forEach(wordObj => {
+            const { word, direction, startRow, startCol } = wordObj;
+            for (let i = 0; i < word.length; i++) {
+                const row = direction === 'horizontal' ? startRow : startRow + i;
+                const col = direction === 'horizontal' ? startCol + i : startCol;
+                const key = `${row}-${col}`;
+                cellData[key] = { letter: word[i], row, col };
+            }
+        });
+
+        // Collect all unique starting positions and sort by row, then column
+        const startPositions = [...new Set(WORDS.map(w => `${w.startRow}-${w.startCol}`))]
+            .map(pos => {
+                const [row, col] = pos.split('-').map(Number);
+                return { row, col, key: pos };
+            })
+            .sort((a, b) => a.row !== b.row ? a.row - b.row : a.col - b.col);
+
+        // Assign clue numbers based on sorted positions
+        startPositions.forEach((pos, index) => {
+            clueNumbers[pos.key] = index + 1;
+        });
+
+        // Assign clue numbers to words
+        WORDS.forEach(wordObj => {
+            const key = `${wordObj.startRow}-${wordObj.startCol}`;
+            wordObj.clueNumber = clueNumbers[key];
+        });
+
+        function createGrid() {
+            const grid = document.getElementById('fleches-grid');
+            grid.style.gridTemplateColumns = `repeat(${GRID_COLS}, 22px)`;
+            grid.style.gridTemplateRows = `repeat(${GRID_ROWS + ROW_OFFSET}, 22px)`;
+
+            for (let row = 0; row < GRID_ROWS + ROW_OFFSET; row++) {
+                for (let col = 0; col < GRID_COLS; col++) {
+                    const dataRow = row - ROW_OFFSET;
+                    const key = `${dataRow}-${col}`;
+                    const cell = document.createElement('div');
+                    cell.className = 'grid-cell';
+                    cell.dataset.row = dataRow;
+                    cell.dataset.col = col;
+                    
+                    if (cellData[key]) {
+                        cell.classList.add('active');
+                        
+                        const startWord = WORDS.find(w => w.startRow === dataRow && w.startCol === col);
+                        if (startWord) {
+                            const numSpan = document.createElement('span');
+                            numSpan.className = 'clue-number';
+                            numSpan.textContent = startWord.clueNumber;
+                            cell.appendChild(numSpan);
+                            
+                            const arrow = document.createElement('span');
+                            arrow.className = `arrow ${startWord.direction === 'horizontal' ? 'right' : 'down'}`;
+                            arrow.textContent = startWord.direction === 'horizontal' ? '→' : '↓';
+                            cell.appendChild(arrow);
+                        }
+                        
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.maxLength = 1;
+                        input.dataset.answer = cellData[key].letter;
+                        input.dataset.row = dataRow;
+                        input.dataset.col = col;
+                        cell.appendChild(input);
+                    } else {
+                        cell.classList.add('blocked');
+                    }
+                    
+                    grid.appendChild(cell);
+                }
+            }
+            
+            renderClues();
+        }
+        
+        // Build link groups for clues that share indicators (*, **, ***)
+        function buildLinkGroups() {
+            const groups = {};
+            WORDS.forEach((w, idx) => {
+                const match = w.clue.match(/^(\*+)\s/);
+                if (match) {
+                    const marker = match[1];
+                    if (!groups[marker]) groups[marker] = [];
+                    groups[marker].push(idx);
+                }
+            });
+            return groups;
+        }
+        
+        const linkGroups = buildLinkGroups();
+        
+        function renderClues() {
+            const hContainer = document.getElementById('horizontal-clues');
+            const vContainer = document.getElementById('vertical-clues');
+
+            // Clear existing content
+            hContainer.innerHTML = '';
+            vContainer.innerHTML = '';
+
+            const hWords = WORDS.filter(w => w.direction === 'horizontal').sort((a, b) => a.clueNumber - b.clueNumber);
+            const vWords = WORDS.filter(w => w.direction === 'vertical').sort((a, b) => a.clueNumber - b.clueNumber);
+
+            hWords.forEach(w => {
+                const wordIdx = WORDS.indexOf(w);
+                const linkGroup = Object.entries(linkGroups).find(([marker, indices]) => indices.includes(wordIdx))?.[0] || '';
+                const div = document.createElement('div');
+                div.className = 'clue-item';
+                div.dataset.wordIndex = wordIdx;
+                if (linkGroup) div.dataset.linkGroup = linkGroup;
+                div.innerHTML = `<span class="clue-num">${w.clueNumber}.</span> ${w.clue}`;
+                div.addEventListener('click', () => focusWord(w));
+                hContainer.appendChild(div);
+            });
+
+            vWords.forEach(w => {
+                const wordIdx = WORDS.indexOf(w);
+                const linkGroup = Object.entries(linkGroups).find(([marker, indices]) => indices.includes(wordIdx))?.[0] || '';
+                const div = document.createElement('div');
+                div.className = 'clue-item';
+                div.dataset.wordIndex = wordIdx;
+                if (linkGroup) div.dataset.linkGroup = linkGroup;
+                div.innerHTML = `<span class="clue-num">${w.clueNumber}.</span> ${w.clue}`;
+                div.addEventListener('click', () => focusWord(w));
+                vContainer.appendChild(div);
+            });
+        }
+        
+        // Direction toggle
+        let currentDirection = 'horizontal';
+        let dirIndicator = null;
+        
+        function focusWord(word) {
+            currentDirection = word.direction;
+            if (dirIndicator) {
+                dirIndicator.textContent = `Direction: ${currentDirection === 'horizontal' ? '→' : '↓'} (Espace pour changer)`;
+            }
+            const input = document.querySelector(`input[data-row="${word.startRow}"][data-col="${word.startCol}"]`);
+            if (input) {
+                input.focus();
+                input.select();
+                highlightCurrentWord();
+            }
+        }
+        
+        function checkWordAt(row, col, direction) {
+            // Find which word this cell belongs to
+            const word = WORDS.find(w => {
+                if (w.direction !== direction) return false;
+                for (let i = 0; i < w.word.length; i++) {
+                    const r = w.direction === 'horizontal' ? w.startRow : w.startRow + i;
+                    const c = w.direction === 'horizontal' ? w.startCol + i : w.startCol;
+                    if (r === row && c === col) return true;
+                }
+                return false;
+            });
+            
+            if (!word) return;
+            
+            // Check all letters in this word
+            for (let i = 0; i < word.word.length; i++) {
+                const r = word.direction === 'horizontal' ? word.startRow : word.startRow + i;
+                const c = word.direction === 'horizontal' ? word.startCol + i : word.startCol;
+                const input = document.querySelector(`input[data-row="${r}"][data-col="${c}"]`);
+                if (input && input.value.toUpperCase() === word.word[i]) {
+                    input.classList.add('correct');
+                    input.disabled = true;
+                    input.readOnly = true;
+                } else if (input) {
+                    input.classList.remove('correct');
+                }
+            }
+        }
+        
+        function moveToNextWord() {
+            const activeInput = document.activeElement;
+            if (!activeInput.matches('.grid-cell.active input')) return;
+
+            const currentRow = parseInt(activeInput.dataset.row);
+            const currentCol = parseInt(activeInput.dataset.col);
+
+            // Find current word index (only in current direction), sorted by clue number
+            const filteredWords = WORDS.filter(w => w.direction === currentDirection)
+                .sort((a, b) => a.clueNumber - b.clueNumber);
+            const currentWordIndex = filteredWords.findIndex(w => {
+                for (let i = 0; i < w.word.length; i++) {
+                    const r = w.direction === 'horizontal' ? w.startRow : w.startRow + i;
+                    const c = w.direction === 'horizontal' ? w.startCol + i : w.startCol;
+                    if (r === currentRow && c === currentCol) return true;
+                }
+                return false;
+            });
+            
+            // Move to next word's start (wrap to first if at end)
+            if (currentWordIndex !== -1) {
+                const nextIndex = (currentWordIndex + 1) % filteredWords.length;
+                const nextWord = filteredWords[nextIndex];
+                const nextInput = document.querySelector(`input[data-row="${nextWord.startRow}"][data-col="${nextWord.startCol}"]`);
+                if (nextInput && !nextInput.disabled) {
+                    nextInput.focus();
+                    nextInput.select();
+                }
+            }
+        }
+        
+        function moveToPrevWord() {
+            const activeInput = document.activeElement;
+            if (!activeInput.matches('.grid-cell.active input')) return;
+
+            const currentRow = parseInt(activeInput.dataset.row);
+            const currentCol = parseInt(activeInput.dataset.col);
+
+            // Find current word index (only in current direction), sorted by clue number
+            const filteredWords = WORDS.filter(w => w.direction === currentDirection)
+                .sort((a, b) => a.clueNumber - b.clueNumber);
+            const currentWordIndex = filteredWords.findIndex(w => {
+                for (let i = 0; i < w.word.length; i++) {
+                    const r = w.direction === 'horizontal' ? w.startRow : w.startRow + i;
+                    const c = w.direction === 'horizontal' ? w.startCol + i : w.startCol;
+                    if (r === currentRow && c === currentCol) return true;
+                }
+                return false;
+            });
+            
+            // Move to previous word's start
+            if (currentWordIndex > 0) {
+                const prevWord = filteredWords[currentWordIndex - 1];
+                const prevInput = document.querySelector(`input[data-row="${prevWord.startRow}"][data-col="${prevWord.startCol}"]`);
+                if (prevInput && !prevInput.disabled) {
+                    prevInput.focus();
+                    prevInput.select();
+                }
+            }
+        }
+        
+        function checkAnswers() {
+            const inputs = document.querySelectorAll('.grid-cell.active input');
+            let correct = 0;
+            const total = inputs.length;
+            
+            inputs.forEach(input => {
+                const userAnswer = input.value.toUpperCase();
+                const answer = input.dataset.answer;
+                
+                if (userAnswer === answer) {
+                    input.classList.add('correct');
+                    input.disabled = true;
+                    input.readOnly = true;
+                    correct++;
+                } else {
+                    input.classList.remove('correct');
+                }
+            });
+            
+            const feedback = document.getElementById('feedback');
+            
+            if (correct === total) {
+                document.getElementById('success-overlay').classList.add('show');
+                document.getElementById('check-btn').disabled = true;
+            } else {
+                feedback.className = 'feedback error';
+                feedback.textContent = `${correct}/${total} lettres correctes. Continue...`;
+            }
+        }
+
+        function revealLetter() {
+            const activeInput = document.activeElement;
+            if (!activeInput.matches('.grid-cell.active input')) {
+                const feedback = document.getElementById('feedback');
+                feedback.className = 'feedback hint';
+                feedback.textContent = 'Cliquez sur une case d\'abord...';
+                return;
+            }
+
+            const row = parseInt(activeInput.dataset.row);
+            const col = parseInt(activeInput.dataset.col);
+            const answer = activeInput.dataset.answer;
+
+            // Reveal the letter
+            activeInput.value = answer;
+            activeInput.classList.add('revealed');
+            activeInput.disabled = true;
+            activeInput.readOnly = true;
+
+            // Move to next empty cell in current word
+            moveToNextEmptyInWord(row, col);
+
+            const feedback = document.getElementById('feedback');
+            feedback.className = 'feedback hint';
+            feedback.textContent = 'Lettre révélée !';
+        }
+
+        function moveToNextEmptyInWord(currentRow, currentCol) {
+            // Find the word at current position in current direction
+            const word = WORDS.find(w => {
+                if (w.direction !== currentDirection) return false;
+                for (let i = 0; i < w.word.length; i++) {
+                    const r = w.direction === 'horizontal' ? w.startRow : w.startRow + i;
+                    const c = w.direction === 'horizontal' ? w.startCol + i : w.startCol;
+                    if (r === currentRow && c === currentCol) return true;
+                }
+                return false;
+            });
+
+            if (!word) return;
+
+            // Find next empty cell in this word
+            for (let i = 0; i < word.word.length; i++) {
+                const r = word.direction === 'horizontal' ? word.startRow : word.startRow + i;
+                const c = word.direction === 'horizontal' ? word.startCol + i : word.startCol;
+                const input = document.querySelector(`input[data-row="${r}"][data-col="${c}"]`);
+                if (input && !input.disabled && !input.value) {
+                    input.focus();
+                    input.select();
+                    return;
+                }
+            }
+        }
+
+        function highlightCurrentWord() {
+            // Clear all word highlights
+            document.querySelectorAll('.grid-cell.word-highlight').forEach(cell => {
+                cell.classList.remove('word-highlight');
+            });
+            document.querySelectorAll('.grid-cell.linked-word-highlight').forEach(cell => {
+                cell.classList.remove('linked-word-highlight');
+            });
+
+            // Clear all clue highlights
+            document.querySelectorAll('.clue-item.highlighted').forEach(item => {
+                item.classList.remove('highlighted');
+            });
+            document.querySelectorAll('.clue-item.linked-highlight').forEach(item => {
+                item.classList.remove('linked-highlight');
+            });
+
+            const activeInput = document.activeElement;
+            if (!activeInput.matches('.grid-cell.active input')) return;
+
+            const currentRow = parseInt(activeInput.dataset.row);
+            const currentCol = parseInt(activeInput.dataset.col);
+
+            // Find the word at current position in current direction
+            const word = WORDS.find(w => {
+                if (w.direction !== currentDirection) return false;
+                for (let i = 0; i < w.word.length; i++) {
+                    const r = w.direction === 'horizontal' ? w.startRow : w.startRow + i;
+                    const c = w.direction === 'horizontal' ? w.startCol + i : w.startCol;
+                    if (r === currentRow && c === currentCol) return true;
+                }
+                return false;
+            });
+
+            if (!word) return;
+
+            // Highlight all cells in this word except the focused one
+            for (let i = 0; i < word.word.length; i++) {
+                const r = word.direction === 'horizontal' ? word.startRow : word.startRow + i;
+                const c = word.direction === 'horizontal' ? word.startCol + i : word.startCol;
+                if (r === currentRow && c === currentCol) continue; // skip focused cell
+                const cell = document.querySelector(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
+                if (cell) cell.classList.add('word-highlight');
+            }
+
+            // Highlight the current clue
+            const wordIdx = WORDS.indexOf(word);
+            document.querySelectorAll(`.clue-item[data-word-index="${wordIdx}"]`).forEach(item => {
+                item.classList.add('highlighted');
+            });
+
+            // Find and highlight linked clues and their words (separate gray highlight)
+            const linkGroupKey = Object.entries(linkGroups).find(([marker, indices]) => indices.includes(wordIdx))?.[0];
+            if (linkGroupKey) {
+                linkGroups[linkGroupKey].forEach(idx => {
+                    // Skip the current word entirely - it gets yellow highlight
+                    if (idx === wordIdx) return;
+                    
+                    // Highlight linked clue
+                    document.querySelectorAll(`.clue-item[data-word-index="${idx}"]`).forEach(item => {
+                        item.classList.add('linked-highlight');
+                    });
+                    
+                    // Highlight linked word cells in grid (except focused cell)
+                    const linkedWord = WORDS[idx];
+                    for (let i = 0; i < linkedWord.word.length; i++) {
+                        const r = linkedWord.direction === 'horizontal' ? linkedWord.startRow : linkedWord.startRow + i;
+                        const c = linkedWord.direction === 'horizontal' ? linkedWord.startCol + i : linkedWord.startCol;
+                        // Skip the focused cell
+                        if (r === currentRow && c === currentCol) continue;
+                        const cell = document.querySelector(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
+                        if (cell) {
+                            cell.classList.add('linked-word-highlight');
+                        }
+                    }
+                });
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            createGrid();
+            document.getElementById('check-btn').addEventListener('click', checkAnswers);
+            document.getElementById('reveal-btn').addEventListener('click', revealLetter);
+            
+            // Direction indicator
+            dirIndicator = document.createElement('div');
+            dirIndicator.id = 'direction-indicator';
+            dirIndicator.style.cssText = 'position:fixed;top:10px;right:10px;font-family:monospace;font-size:14px;background:#fff;padding:4px 8px;border:2px solid #1a1a1a;';
+            dirIndicator.textContent = 'Direction: → (Espace pour changer)';
+            document.body.appendChild(dirIndicator);
+            
+            // Toggle direction with Space (only if word exists in that direction)
+            document.addEventListener('keydown', e => {
+                if (e.code === 'Space' && document.activeElement.matches('.grid-cell.active input')) {
+                    e.preventDefault();
+                    const row = parseInt(document.activeElement.dataset.row);
+                    const col = parseInt(document.activeElement.dataset.col);
+
+                    // Check if there's a word in each direction at this position
+                    const hasHorizontal = WORDS.some(w => {
+                        if (w.direction !== 'horizontal') return false;
+                        for (let i = 0; i < w.word.length; i++) {
+                            if (w.startRow === row && w.startCol + i === col) return true;
+                        }
+                        return false;
+                    });
+
+                    const hasVertical = WORDS.some(w => {
+                        if (w.direction !== 'vertical') return false;
+                        for (let i = 0; i < w.word.length; i++) {
+                            if (w.startRow + i === row && w.startCol === col) return true;
+                        }
+                        return false;
+                    });
+
+                    // Only toggle if the other direction has a word
+                    const newDirection = currentDirection === 'horizontal' ? 'vertical' : 'horizontal';
+                    const canSwitch = newDirection === 'horizontal' ? hasHorizontal : hasVertical;
+
+                    if (canSwitch) {
+                        currentDirection = newDirection;
+                        dirIndicator.textContent = `Direction: ${currentDirection === 'horizontal' ? '→' : '↓'} (Espace pour changer)`;
+                        highlightCurrentWord();
+                    }
+                }
+                
+                // Move to next/previous word on Enter
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (e.shiftKey) {
+                        moveToPrevWord();
+                    } else {
+                        moveToNextWord();
+                    }
+                }
+            });
+            
+            // Auto-advance after typing
+            document.addEventListener('input', e => {
+                // Clear feedback on new input
+                const feedback = document.getElementById('feedback');
+                feedback.className = 'feedback';
+                feedback.textContent = '';
+                
+                if (e.target.matches('.grid-cell.active input') && e.target.value.length === 1) {
+                    const row = parseInt(e.target.dataset.row);
+                    const col = parseInt(e.target.dataset.col);
+                    let nextInput;
+                    
+                    if (currentDirection === 'horizontal') {
+                        nextInput = document.querySelector(`input[data-row="${row}"][data-col="${col + 1}"]`);
+                    } else {
+                        nextInput = document.querySelector(`input[data-row="${row + 1}"][data-col="${col}"]`);
+                    }
+                    
+                    if (nextInput) {
+                        nextInput.focus();
+                        nextInput.select();
+                    }
+                }
+            });
+            
+            // Select text on focus
+            document.addEventListener('focusin', e => {
+                if (e.target.matches('.grid-cell.active input')) {
+                    e.target.select();
+                    highlightCurrentWord();
+                }
+            });
+            
+            // Arrow key navigation
+            document.addEventListener('keydown', e => {
+                if (!document.activeElement.matches('.grid-cell.active input')) return;
+                
+                const row = parseInt(document.activeElement.dataset.row);
+                const col = parseInt(document.activeElement.dataset.col);
+                let nextInput = null;
+                
+                switch(e.key) {
+                    case 'ArrowRight':
+                        nextInput = document.querySelector(`input[data-row="${row}"][data-col="${col + 1}"]`);
+                        break;
+                    case 'ArrowLeft':
+                        nextInput = document.querySelector(`input[data-row="${row}"][data-col="${col - 1}"]`);
+                        break;
+                    case 'ArrowDown':
+                        nextInput = document.querySelector(`input[data-row="${row + 1}"][data-col="${col}"]`);
+                        break;
+                    case 'ArrowUp':
+                        nextInput = document.querySelector(`input[data-row="${row - 1}"][data-col="${col}"]`);
+                        break;
+                    case 'Backspace':
+                        if (document.activeElement.value === '') {
+                            e.preventDefault();
+                            let prevInput;
+                            if (currentDirection === 'horizontal') {
+                                prevInput = document.querySelector(`input[data-row="${row}"][data-col="${col - 1}"]`);
+                            } else {
+                                prevInput = document.querySelector(`input[data-row="${row - 1}"][data-col="${col}"]`);
+                            }
+                            if (prevInput) {
+                                prevInput.focus();
+                                prevInput.select();
+                            }
+                        }
+                        break;
+                }
+                
+                if (nextInput) {
+                    e.preventDefault();
+                    nextInput.focus();
+                }
+            });
+            
+            // Tab switching for clues
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // Update active tab button
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    // Update active clues section
+                    const tab = btn.dataset.tab;
+                    document.querySelectorAll('.clues-section').forEach(s => s.classList.remove('active'));
+                    document.getElementById(`${tab}-clues`).classList.add('active');
+                });
+            });
+        });
+    </script>
+
+    <!-- Success Overlay -->
+    <div class="success-overlay" id="success-overlay">
+        <div class="success-box">
+            <h2>Bravo !</h2>
+            <p>Tu as trouvé tous les mots même avec mes indices terribles, trop fort ! Mais est-ce que c'était un mots-croisés ou un mots-fléchés...</p>
+            <a href="../index.html" class="retour-btn">Retourner au port</a>
+        </div>
+    </div>
+</body>
+</html>

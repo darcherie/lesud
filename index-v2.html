@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vincent - Chasse au Trésor</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+        }
+
+        .letters-collected {
+            position: fixed;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+            z-index: 100;
+        }
+
+        .letter-slot {
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: transparent;
+            font-family: monospace;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .letter-slot.filled {
+            border-color: var(--primary);
+            color: white;
+            background: rgba(99, 102, 241, 0.3);
+        }
+
+        .scene-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Placeholder scene - will be replaced with pixel art */
+        .scene-placeholder {
+            width: 100%;
+            height: 100%;
+            background-image: url('assets/images/scene.png');
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-color: #1a1a2e;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scene-placeholder::before {
+            display: none;
+        }
+
+        /* Hidden clickable areas */
+        .clickable-area {
+            position: absolute;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+        }
+
+        .clickable-area.locked {
+            cursor: not-allowed;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .clickable-area.unlocked:hover {
+            filter: brightness(1.3);
+            outline: 3px solid var(--primary);
+            outline-offset: 4px;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+        }
+
+        .clickable-area.unlocked:active {
+            transform: scale(0.95);
+        }
+
+        /* Clickable areas - adjust these % to match your pixel art */
+        /* Newspaper (mots fléchés) - red/brown structure on left */
+        #puzzle-newspaper { top: 35%; left: 8%; width: 12%; height: 20%; }
+        /* Water (sea slug game) - blue area at bottom */
+        #puzzle-water { top: 65%; left: 20%; width: 30%; height: 30%; }
+        /* Sailing (mistral game) - boat in water */
+        #puzzle-sailing { top: 60%; left: 55%; width: 15%; height: 20%; }
+        /* Map - smaller element upper right area */
+        #puzzle-map { top: 25%; left: 75%; width: 8%; height: 12%; }
+        /* Photos - middle structure */
+        #puzzle-photos { top: 30%; left: 40%; width: 10%; height: 15%; }
+        /* Final - center focus point */
+        #puzzle-final { top: 45%; left: 55%; width: 8%; height: 10%; }
+
+        /* Vincent character */
+        .vincent-character {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 50;
+        }
+
+        .vincent-sprite {
+            width: 60px;
+            height: 60px;
+            background: #FFE4C4;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            border: 3px solid white;
+        }
+
+        .dialogue-bubble {
+            position: absolute;
+            bottom: 100%;
+            right: 0;
+            width: 220px;
+            background: white;
+            padding: 0.8rem 1rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+            font-family: system-ui, sans-serif;
+        }
+
+        .dialogue-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            right: 25px;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid white;
+        }
+
+        /* Unlock notification */
+        .unlock-toast {
+            position: fixed;
+            top: 5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            display: none;
+            animation: bounceIn 0.5s ease;
+            font-weight: bold;
+            z-index: 200;
+        }
+
+        .unlock-toast.show {
+            display: block;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: translateX(-50%) scale(0); }
+            50% { transform: translateX(-50%) scale(1.1); }
+            100% { transform: translateX(-50%) scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Letters collected at top -->
+    <div class="letters-collected" id="letters-display">
+        <div class="letter-slot" data-index="0"></div>
+        <div class="letter-slot" data-index="1"></div>
+        <div class="letter-slot" data-index="2"></div>
+        <div class="letter-slot" data-index="3"></div>
+        <div class="letter-slot" data-index="4"></div>
+    </div>
+
+    <!-- Main scene (full page) -->
+    <div class="scene-container">
+        <div class="scene-placeholder" id="scene">
+            <!-- Pixel art will be set as background-image -->
+
+            <!-- Hidden clickable areas -->
+            <div class="clickable-area locked" id="puzzle-newspaper" data-puzzle="mots-fleches" title="Locked"></div>
+            <div class="clickable-area locked" id="puzzle-water" data-puzzle="sea-slug" title="Locked"></div>
+            <div class="clickable-area locked" id="puzzle-sailing" data-puzzle="sailing" title="Locked"></div>
+            <div class="clickable-area locked" id="puzzle-map" data-puzzle="map-click" title="Locked"></div>
+            <div class="clickable-area locked" id="puzzle-photos" data-puzzle="memory-match" title="Locked"></div>
+            <div class="clickable-area locked" id="puzzle-final" data-puzzle="riddle" title="Locked"></div>
+        </div>
+
+        <!-- Vincent character -->
+        <div class="vincent-character">
+            <div class="dialogue-bubble" id="vincent-dialogue">
+                Je cherche le prochain indice...
+            </div>
+            <div class="vincent-sprite">🧑</div>
+        </div>
+    </div>
+
+    <!-- Unlock notification -->
+    <div class="unlock-toast" id="unlock-toast">
+        🔓 Nouvelle énigme débloquée !
+    </div>
+
+    <script src="assets/js/puzzle-nav.js"></script>
+    <script>
+        // Configuration
+        const PUZZLE_CONFIG = [
+            { id: 'mots-fleches', name: 'Mots Fléchés', hint: 'Les mots sont partout... même dans le journal.' },
+            { id: 'sea-slug', name: 'Invasion des Limaces', hint: 'Quelque chose dans l\'eau...' },
+            { id: 'sailing', name: 'Contre le Mistral', hint: 'Le vent souffle du nord...' },
+            { id: 'map-click', name: 'Lieu Secret', hint: 'On se souvient des endroits...' },
+            { id: 'memory-match', name: 'Mémoire', hint: 'Les photos racontent des histoires...' },
+            { id: 'riddle', name: 'Énigme Finale', hint: 'Dernière étape...' }
+        ];
+
+        // Letters to reveal (will spell the final code)
+        const FINAL_CODE = '?????'; // TODO: Set the actual code
+        const LETTERS = FINAL_CODE.split('');
+
+        // Track progress
+        let progress = JSON.parse(localStorage.getItem('vincent-puzzle-progress') || '[]');
+        let currentPuzzleIndex = progress.length;
+
+        // Update letters display
+        function updateLettersDisplay() {
+            const slots = document.querySelectorAll('.letter-slot');
+            progress.forEach((puzzleId, index) => {
+                const puzzle = PUZZLE_CONFIG.find(p => p.id === puzzleId);
+                if (puzzle && slots[index]) {
+                    slots[index].textContent = LETTERS[index] || '?';
+                    slots[index].classList.add('filled');
+                }
+            });
+        }
+
+        // Update dialogue
+        function updateDialogue() {
+            const dialogue = document.getElementById('vincent-dialogue');
+            const nextPuzzle = PUZZLE_CONFIG[currentPuzzleIndex];
+
+            if (currentPuzzleIndex >= PUZZLE_CONFIG.length) {
+                dialogue.textContent = 'J\'ai trouvé toutes les lettres ! Le code est: ' + FINAL_CODE;
+            } else {
+                dialogue.textContent = nextPuzzle.hint;
+            }
+        }
+
+        // Unlock puzzles based on timer
+        function checkUnlockStatus() {
+            PUZZLE_CONFIG.forEach((puzzle, index) => {
+                const element = document.getElementById(`puzzle-${puzzle.id.replace('mots-fleches', 'newspaper').replace('sea-slug', 'water').replace('map-click', 'map').replace('memory-match', 'photos').replace('riddle', 'final')}`);
+                if (!element) return;
+
+                // Check if puzzle is already completed
+                if (progress.includes(puzzle.id)) {
+                    element.classList.remove('locked');
+                    element.classList.add('completed');
+                    element.onclick = null;
+                    return;
+                }
+
+                // Check if this puzzle should be unlocked
+                if (index <= currentPuzzleIndex) {
+                    // Check timer
+                    const completionTime = parseInt(localStorage.getItem(`puzzle-complete-${PUZZLE_CONFIG[index - 1]?.id}`) || '0');
+                    const now = Date.now();
+                    const unlockTime = completionTime + (index === 0 ? 0 : getDelayMs(index - 1));
+
+                    if (now >= unlockTime || localStorage.getItem('testMode') === 'true') {
+                        element.classList.remove('locked');
+                        element.classList.add('unlocked');
+                        element.onclick = () => startPuzzle(puzzle.id);
+                    }
+                }
+            });
+        }
+
+        function getDelayMs(puzzleIndex) {
+            // Same delays as time-config.js
+            const delays = [0, 110, 80, 50, 25]; // minutes, will multiply
+            const baseDelay = delays[puzzleIndex + 1] || 30;
+            return baseDelay * 60 * 1000;
+        }
+
+        function startPuzzle(puzzleId) {
+            window.location.href = `puzzles/${puzzleId}.html`;
+        }
+
+        // Initialize
+        updateLettersDisplay();
+        updateDialogue();
+        checkUnlockStatus();
+
+        // Test mode: unlock all
+        if (localStorage.getItem('testMode') === 'true') {
+            document.querySelectorAll('.clickable-area').forEach(el => {
+                el.classList.remove('locked');
+                el.classList.add('unlocked');
+            });
+        }
+
+        // Enable test mode from console: localStorage.setItem('testMode', 'true')
+    </script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+/* Landing Page - Interactive Scene */
+
+/* Newspaper Stand - Clickable Hotspot */
+.newspaper-stand {
+    position: fixed;
+    bottom: 20%;
+    right: 15%;
+    width: 80px;
+    height: 100px;
+    cursor: pointer;
+    z-index: 10;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.newspaper-stand:hover {
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+.newspaper-stand.clicked {
+    background: rgba(99, 102, 241, 0.2);
+}
+
+/* Puzzle Button */
+.puzzle-btn {
+    position: fixed;
+    bottom: 10%;
+    right: 15%;
+    background: linear-gradient(135deg, #6366f1, #f472b6);
+    color: white;
+    border: none;
+    padding: 16px 32px;
+    font-size: 16px;
+    font-family: 'Courier New', monospace;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 4px 4px 0 #1e293b;
+    z-index: 20;
+    transition: all 0.2s ease;
+}
+
+.puzzle-btn:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 #1e293b;
+}
+
+.puzzle-btn:active {
+    transform: translate(0, 0);
+    box-shadow: 2px 2px 0 #1e293b;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .newspaper-stand {
+        right: 10%;
+        width: 60px;
+        height: 80px;
+    }
+    
+    .puzzle-btn {
+        bottom: 5%;
+        right: 10%;
+        padding: 12px 24px;
+        font-size: 14px;
+    }
+}

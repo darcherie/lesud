@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎂 Joyeux Anniversaire Vincent</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/landing.css">
+    <style>
+        /* Clickable Hotspots */
+        .hotspot {
+            position: fixed;
+            cursor: pointer;
+            z-index: 10;
+            border-radius: 8px;
+            transition: background 0.2s ease;
+        }
+        .hotspot:hover {
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+        
+        /* Notre-Dame de la Garde (Light Show) - upper left, smaller */
+        .hotspot-notre-dame {
+            top: 18%;
+            left: 2%;
+            width: 6%;
+            height: 9%;
+        }
+        
+        /* Sailboats (Sailing Game) - middle left */
+        .hotspot-sailboats {
+            top: 40%;
+            left: 8%;
+            width: 18%;
+            height: 25%;
+        }
+        
+        /* Newspaper (Crossword) - front left, smaller */
+        .hotspot-newspaper {
+            bottom: 8%;
+            left: 12%;
+            width: 6%;
+            height: 10%;
+        }
+        
+        /* Cathédrale la Major (Fish Sudoku) - middle right, smaller */
+        .hotspot-cathedral {
+            top: 32%;
+            right: 2.5%;
+            width: 6%;
+            height: 11%;
+        }
+        
+        /* Sailboat by bridge (Plongée) - upper right, smaller */
+        .hotspot-sea-slug {
+            top: 30%;
+            right: 12%;
+            width: 4%;
+            height: 5%;
+        }
+        
+        /* Tooltip */
+        .hotspot::after {
+            content: attr(data-title);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+        .hotspot:hover::after {
+            opacity: 1;
+        }
+        
+        /* Fix left-side cutoff */
+        .hotspot-notre-dame::after {
+            left: 0;
+            transform: translateX(0);
+        }
+        
+        /* Fix right-side cutoff */
+        .hotspot-cathedral::after {
+            left: auto;
+            right: 0;
+            transform: translateX(0);
+        }
+
+        /* Vincent Dialogue Bubble */
+        .vincent-bubble {
+            position: fixed;
+            bottom: 6%;
+            left: 32%;
+            max-width: 200px;
+            background: white;
+            border: 3px solid #1e293b;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.5rem;
+            line-height: 1.8;
+            color: #1e293b;
+            box-shadow: 4px 4px 0 #1e293b;
+            z-index: 5;
+        }
+
+        .vincent-bubble::before {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: 8px solid transparent;
+            border-right-color: white;
+        }
+
+        .vincent-bubble::after {
+            content: '';
+            position: absolute;
+            left: -14px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: 10px solid transparent;
+            border-right-color: #1e293b;
+            z-index: -1;
+        }
+    </style>
+</head>
+<body>
+    <div class="pixel-bg"></div>
+    
+    <!-- Vincent Dialogue Bubble -->
+    <div class="vincent-bubble" id="vincent-bubble">
+        Wooah je suis tombé dans l'image !<br>
+        <span style="font-size: 0.4rem; color: #6b7280;">(espace)</span>
+    </div>
+    
+    <!-- Clickable Hotspots -->
+    <div class="hotspot hotspot-notre-dame" data-title="Notre-Dame de la Garde" onclick="location.href='puzzles/notre-dame-lights.html'"></div>
+
+    <div class="hotspot hotspot-newspaper" data-title="Journaux" onclick="location.href='puzzles/mots-fleches.html'"></div>
+    <div class="hotspot hotspot-cathedral" data-title="Cathédrale de la Major" onclick="location.href='puzzles/fish-sudoku.html'"></div>
+    <div class="hotspot hotspot-sea-slug" data-title="Plongée" onclick="location.href='puzzles/sea-slug.html'"></div>
+
+    <script src="assets/js/puzzle-complete.js"></script>
+    <script>
+        // Background animation frames
+        const frames = [
+            'marseille1.png',
+            'marseille2.png',
+            'marseille3.png',
+            'marseille4.png',
+            'marseille5.png',
+            'marseille6.png',
+            'marseille7.png',
+            'marseille8.png',
+            'marseille9.png',
+            'marseille10.png',
+            'marseille11.png',
+            'marseille12.png',
+            'marseille13.png',
+            'marseille14.png',
+            'marseille15.png',
+            'marseille16.png',
+            'marseille17.png',
+            'marseille18.png',
+            'marseille19.png',
+            'marseille20.png',
+            'marseille21.png',
+            'marseille22.png',
+            'marseille23.png',
+            'marseille24.png',
+            'marseille25.png',
+            'marseille26.png',
+            'marseille27.png',
+            'marseille28.png',
+            'marseille29.png',
+            'marseille30.png'
+        ];
+        
+        let currentFrame = 0;
+        const bgElement = document.querySelector('.pixel-bg');
+        const frameDuration = 500; // ms per frame - adjust as needed
+        
+        // Preload frames
+        frames.forEach((frame, i) => {
+            const img = new Image();
+            img.src = `assets/images/${frame}`;
+        });
+        
+        // Cycle through frames
+        function animateBackground() {
+            bgElement.style.backgroundImage = `url('assets/images/${frames[currentFrame]}')`;
+            currentFrame = (currentFrame + 1) % frames.length;
+        }
+        
+        // Start animation
+        setInterval(animateBackground, frameDuration);
+
+        // Vincent bubble interaction - check if already dismissed
+        let bubbleState = 0;
+        const bubble = document.getElementById('vincent-bubble');
+        if (localStorage.getItem('vincentBubbleDismissed')) {
+            bubble.style.display = 'none';
+        }
+
+        const bubbleTexts = [
+            'Wooah je suis tombé dans l\'image !<br><span style="font-size: 0.4rem; color: #6b7280;">(espace)</span>',
+            'Peut-être je devrais explorer un peu...<br><span style="font-size: 0.4rem; color: #6b7280;">(espace)</span>'
+        ];
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                bubbleState++;
+                if (bubbleState < bubbleTexts.length) {
+                    bubble.innerHTML = bubbleTexts[bubbleState];
+                } else {
+                    bubble.style.display = 'none';
+                    localStorage.setItem('vincentBubbleDismissed', 'true');
+                }
+            }
+        });
+    </script>
+</body>
+</html>

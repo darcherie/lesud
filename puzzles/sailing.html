@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navigation contre le Mistral</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/puzzle.css">
+    <style>
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        #game-canvas {
+            border: 4px solid var(--primary);
+            border-radius: 8px;
+            background: linear-gradient(180deg, #1a3a5c 0%, #2E5A88 50%, #3d7ab8 100%);
+        }
+
+        .game-info {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .game-info > div {
+            background: var(--surface-light);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 1.1rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            max-width: 400px;
+            height: 20px;
+            background: var(--surface-light);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transition: width 0.3s;
+        }
+
+        .wind-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.5);
+            padding: 0.5rem;
+            border-radius: 8px;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .btn-play {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.7rem;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 4px 4px 0 #1e40af;
+            transition: all 0.2s;
+        }
+
+        .btn-play:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 #1e40af;
+        }
+
+        .btn-play:active {
+            transform: translate(0, 0);
+            box-shadow: 2px 2px 0 #1e40af;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="retour-btn">Retourner au port</a>
+    <div class="container">
+        <header>
+            <h1>Navigation contre le Mistral</h1>
+            <p class="subtitle">Le vent change de direction ! Tack pour retourner au port !</p>
+        </header>
+
+        <main>
+            <div class="game-container">
+                <div class="game-info">
+                    <div>Temps: <span id="timer">60</span>s</div>
+                    <div>Distance: <span id="distance">0</span>%</div>
+                    <div>Vent: <span id="wind-dir">↙</span></div>
+                </div>
+
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill" style="width: 0%;"></div>
+                </div>
+
+                <div style="position: relative;">
+                    <canvas id="game-canvas" width="400" height="400"></canvas>
+                    <div class="wind-indicator" id="wind-indicator">
+                        Mistral<br>
+                        <span id="wind-strength">↙ NO</span>
+                    </div>
+                </div>
+
+                <button id="start-game" class="btn-play">Commencer</button>
+                <div id="feedback" class="feedback"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Success Overlay -->
+    <div class="success-overlay" id="success-overlay">
+        <div class="success-box">
+            <h2>Bravo !</h2>
+            <p>Bon travail je n'étais pas sûre si ce jeu était possible j'avoue...</p>
+            <a href="../index.html" class="retour-btn">Retourner au port</a>
+        </div>
+    </div>
+
+    <!-- Fail Overlay -->
+    <div class="success-overlay" id="fail-overlay" style="display: none;">
+        <div class="success-box">
+            <h2>Oops...</h2>
+            <p>Ré-essaie ?</p>
+            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1rem;">
+                <button class="btn-play" id="retry-btn" style="background: linear-gradient(135deg, #22c55e, #16a34a); box-shadow: 4px 4px 0 #15803d;">Oui</button>
+                <a href="../index.html" class="btn-play" style="background: linear-gradient(135deg, #ef4444, #dc2626); box-shadow: 4px 4px 0 #b91c1c; text-decoration: none;">Non</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/puzzle-nav.js"></script>
+    <script>
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Wind directions: angle in degrees, arrow symbol, name
+        const WIND_DIRECTIONS = [
+            { angle: 225, symbol: '↙', name: 'NO' },  // Northwest
+            { angle: 180, symbol: '↓', name: 'N' },   // North
+            { angle: 135, symbol: '↘', name: 'NE' },  // Northeast
+            { angle: 270, symbol: '←', name: 'O' },   // West
+            { angle: 90, symbol: '→', name: 'E' },    // East
+        ];
+
+        // Difficulty settings
+        const DIFFICULTY = {
+            easy: {
+                windSpeed: 0.8,
+                tackBoost: 2.5,
+                rockCount: 3,
+                timeLimit: 90,
+                directionChangeInterval: 8000
+            },
+            medium: {
+                windSpeed: 1.0,
+                tackBoost: 2,
+                rockCount: 5,
+                timeLimit: 60,
+                directionChangeInterval: 6000
+            },
+            hard: {
+                windSpeed: 1.2,
+                tackBoost: 1.5,
+                rockCount: 7,
+                timeLimit: 45,
+                directionChangeInterval: 4000
+            }
+        };
+
+        let currentDifficulty = 'medium';
+
+        // Game state
+        let gameRunning = false;
+        let timeLeft = 60;
+        let progress = 0;
+
+        // Boat state
+        let boat = {
+            x: 200,
+            y: 350,
+            angle: 0
+        };
+
+        // Wind state
+        let wind = {
+            direction: 0,
+            angle: 225,
+            vx: 0,
+            vy: 0
+        };
+
+        // Tacking state
+        let isTacking = false;
+        let tackDirection = 0;
+
+        // Rocks
+        let rocks = [];
+
+        // Port position
+        const port = { x: 200, y: 30 };
+
+        let directionChangeTimer = null;
+
+        function updateWindDirection() {
+            // Pick a random direction
+            const newDir = WIND_DIRECTIONS[Math.floor(Math.random() * WIND_DIRECTIONS.length)];
+            wind.direction = newDir;
+            wind.angle = newDir.angle;
+            
+            // Calculate push direction and velocity
+            // Wind comes FROM direction, pushes boat opposite way
+            const settings = DIFFICULTY[currentDifficulty];
+            
+            // Map wind direction to push direction (where arrow points, where boat drifts)
+            // Canvas: positive x = right, positive y = down (south)
+            // Wind pushes boat, but mostly sideways - player can always tack forward
+            switch(newDir.name) {
+                case 'N':  // Wind from north → pushes south
+                    wind.vx = 0;
+                    wind.vy = settings.windSpeed;  // Full south push
+                    break;
+                case 'NO': // Wind from northwest → pushes southeast
+                    wind.vx = settings.windSpeed * 0.8;
+                    wind.vy = settings.windSpeed * 0.4;  // Less south push
+                    break;
+                case 'NE': // Wind from northeast → pushes southwest
+                    wind.vx = -settings.windSpeed * 0.8;
+                    wind.vy = settings.windSpeed * 0.4;  // Less south push
+                    break;
+                case 'O': // Wind from west → pushes east
+                    wind.vx = settings.windSpeed;
+                    wind.vy = 0;  // No south push
+                    break;
+                case 'E': // Wind from east → pushes west
+                    wind.vx = -settings.windSpeed;
+                    wind.vy = 0;  // No south push
+                    break;
+            }
+
+            // Update UI - show push direction symbol
+            const pushSymbols = {
+                'N': '↓', 'NO': '↘', 'NE': '↙', 'O': '→', 'E': '←'
+            };
+            document.getElementById('wind-dir').textContent = pushSymbols[newDir.name];
+            document.getElementById('wind-strength').textContent = `${pushSymbols[newDir.name]} Mistral`;
+        }
+
+        function createRocks() {
+            const settings = DIFFICULTY[currentDifficulty];
+            rocks = [];
+            for (let i = 0; i < settings.rockCount; i++) {
+                rocks.push({
+                    x: 50 + Math.random() * 300,
+                    y: 100 + Math.random() * 200,
+                    size: 25 + Math.random() * 15
+                });
+            }
+        }
+
+        function drawWater() {
+            // Gradient background
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#1a3a5c');
+            gradient.addColorStop(0.5, '#2E5A88');
+            gradient.addColorStop(1, '#3d7ab8');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Wave pattern
+            ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+            ctx.lineWidth = 2;
+            for (let y = 30; y < canvas.height; y += 40) {
+                ctx.beginPath();
+                for (let x = 0; x < canvas.width; x += 20) {
+                    const waveY = y + Math.sin((x + Date.now() / 500) * 0.05) * 5;
+                    if (x === 0) ctx.moveTo(x, waveY);
+                    else ctx.lineTo(x, waveY);
+                }
+                ctx.stroke();
+            }
+        }
+
+        function drawPort() {
+            // Dock
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(port.x - 40, port.y - 20, 80, 25);
+            
+            // Pylons
+            ctx.fillStyle = '#5D3A1A';
+            ctx.fillRect(port.x - 35, port.y - 10, 8, 20);
+            ctx.fillRect(port.x + 27, port.y - 10, 8, 20);
+
+            // Lighthouse
+            ctx.fillStyle = '#f0f0f0';
+            ctx.beginPath();
+            ctx.moveTo(port.x - 10, port.y - 20);
+            ctx.lineTo(port.x + 10, port.y - 20);
+            ctx.lineTo(port.x + 5, port.y - 50);
+            ctx.lineTo(port.x - 5, port.y - 50);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Light
+            ctx.fillStyle = '#ffcc00';
+            ctx.beginPath();
+            ctx.arc(port.x, port.y - 55, 6, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Light glow
+            ctx.fillStyle = 'rgba(255, 204, 0, 0.3)';
+            ctx.beginPath();
+            ctx.arc(port.x, port.y - 55, 15, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawRocks() {
+            rocks.forEach(rock => {
+                ctx.font = `${rock.size * 1.5}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('🪨', rock.x, rock.y);
+            });
+        }
+
+        function drawBoat() {
+            ctx.save();
+            ctx.translate(boat.x, boat.y);
+            ctx.rotate((boat.angle) * Math.PI / 180);
+            ctx.font = '40px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('⛵', 0, 0);
+            ctx.restore();
+        }
+
+        function drawWindArrows() {
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.font = '16px Arial';
+            
+            // Calculate arrow angle based on push direction
+            // Arrow points where wind pushes (same as boat drifts)
+            let arrowAngle = 0;
+            switch(wind.direction?.name) {
+                case 'N': arrowAngle = Math.PI / 2; break;      // down
+                case 'NO': arrowAngle = Math.PI / 4; break;     // down-right
+                case 'NE': arrowAngle = 3 * Math.PI / 4; break; // down-left
+                case 'O': arrowAngle = 0; break;                // right
+                case 'E': arrowAngle = Math.PI; break;          // left
+            }
+            
+            for (let i = 0; i < 5; i++) {
+                const x = 50 + i * 80;
+                const y = 80 + Math.sin(Date.now() / 300 + i) * 5;
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(arrowAngle);
+                ctx.fillText('→', -8, 5);
+                ctx.restore();
+            }
+        }
+
+        function update() {
+            if (!gameRunning) return;
+
+            const settings = DIFFICULTY[currentDifficulty];
+            
+            // Wind pushes boat
+            boat.x += wind.vx;
+            boat.y += wind.vy;
+
+            // When tacking, move forward (up)
+            if (isTacking) {
+                boat.y -= settings.tackBoost;
+                boat.x += tackDirection * 1;
+            }
+
+            // Keep boat in bounds
+            boat.x = Math.max(25, Math.min(canvas.width - 25, boat.x));
+            boat.y = Math.max(25, Math.min(canvas.height - 25, boat.y));
+
+            // Check rock collision
+            rocks.forEach(rock => {
+                const dx = boat.x - rock.x;
+                const dy = boat.y - rock.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < rock.size + 15) {
+                    // Push boat away from rock
+                    const angle = Math.atan2(dy, dx);
+                    boat.x = rock.x + Math.cos(angle) * (rock.size + 20);
+                    boat.y = rock.y + Math.sin(angle) * (rock.size + 20);
+                }
+            });
+
+            // Check if reached port
+            const distToPort = Math.sqrt((boat.x - port.x) ** 2 + (boat.y - port.y) ** 2);
+            if (distToPort < 40) {
+                endGame(true);
+                return;
+            }
+
+            // Update progress (distance to port)
+            const maxDist = Math.sqrt((canvas.width / 2 - port.x) ** 2 + (canvas.height - port.y) ** 2);
+            progress = Math.max(0, 100 - (distToPort / maxDist * 100));
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('distance').textContent = Math.round(progress);
+            document.getElementById('progress-fill').style.width = progress + '%';
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawWater();
+            drawWindArrows();
+            drawPort();
+            drawRocks();
+            drawBoat();
+        }
+
+        function gameLoop() {
+            if (!gameRunning) return;
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function startTack(direction) {
+            if (isTacking || !gameRunning) return;
+
+            isTacking = true;
+            tackDirection = direction;
+            boat.angle = direction === -1 ? -30 : 30;
+
+            setTimeout(() => {
+                isTacking = false;
+                boat.angle = 0;
+            }, 500);
+        }
+
+        function startGame() {
+            const settings = DIFFICULTY[currentDifficulty];
+            
+            gameRunning = true;
+            timeLeft = settings.timeLimit;
+            progress = 0;
+            boat = { x: 200, y: 370, angle: 0 };
+            isTacking = false;
+
+            createRocks();
+            updateWindDirection();
+
+            document.getElementById('start-game').style.display = 'none';
+            document.getElementById('feedback').className = 'feedback';
+            document.getElementById('feedback').textContent = '';
+            document.getElementById('timer').textContent = timeLeft;
+
+            // Timer
+            const timer = setInterval(() => {
+                if (!gameRunning) {
+                    clearInterval(timer);
+                    clearInterval(directionChangeTimer);
+                    return;
+                }
+                timeLeft--;
+                document.getElementById('timer').textContent = timeLeft;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    clearInterval(directionChangeTimer);
+                    endGame(false);
+                }
+            }, 1000);
+
+            // Wind direction changes
+            directionChangeTimer = setInterval(() => {
+                if (gameRunning) {
+                    updateWindDirection();
+                }
+            }, settings.directionChangeInterval);
+
+            gameLoop();
+        }
+
+        function endGame(won) {
+            gameRunning = false;
+            clearInterval(directionChangeTimer);
+
+            if (won) {
+                document.getElementById('success-overlay').classList.add('show');
+            } else {
+                document.getElementById('fail-overlay').style.display = 'flex';
+            }
+        }
+
+        // Start game
+        document.getElementById('start-game').addEventListener('click', startGame);
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a') startTack(-1);
+            if (e.key === 'ArrowRight' || e.key === 'd') startTack(1);
+        });
+
+        // Retry button
+        document.getElementById('retry-btn').addEventListener('click', () => {
+            document.getElementById('fail-overlay').style.display = 'none';
+            document.getElementById('start-game').style.display = 'block';
+        });
+
+        // Initial draw
+        createRocks();
+        updateWindDirection();
+        draw();
+    </script>
+    <script src="../assets/js/puzzle-complete.js"></script>
+</body>
+</html>

@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudoku poisson de la Major</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/puzzle.css">
+    <style>
+        .sudoku-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .sudoku-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 3px;
+            background: var(--primary);
+            padding: 4px;
+            border-radius: 12px;
+            max-width: 360px;
+        }
+
+        .sudoku-cell {
+            width: 55px;
+            height: 55px;
+            background: var(--surface);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .sudoku-cell:hover:not(.fixed):not(.revealed) {
+            background: var(--surface-light);
+            transform: scale(1.02);
+        }
+
+        .sudoku-cell.selected {
+            box-shadow: 0 0 0 2px var(--primary);
+        }
+
+        .sudoku-cell.fixed {
+            background: var(--surface-light);
+            cursor: default;
+        }
+
+        .sudoku-cell.revealed {
+            background: rgba(34, 197, 94, 0.2);
+            cursor: default;
+        }
+
+        .sudoku-cell.correct {
+            background: rgba(34, 197, 94, 0.3);
+        }
+
+        .sudoku-cell.wrong {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        .sudoku-cell img {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            image-rendering: pixelated;
+            display: block;
+            margin: 0 auto;
+        }
+
+        /* 2x3 box borders for 6x6 grid */
+        /* Rows 1-2: bottom border */
+        .sudoku-cell:nth-child(n+1):nth-child(-n+6) { border-bottom: 2px solid var(--primary); }
+        .sudoku-cell:nth-child(n+7):nth-child(-n+12) { border-bottom: 2px solid var(--primary); }
+        /* Row 3: no bottom border (middle) */
+        .sudoku-cell:nth-child(n+13):nth-child(-n+18) { border-bottom: 2px solid var(--primary); }
+        /* Row 6: no bottom border (last row) */
+        .sudoku-cell:nth-child(n+31):nth-child(-n+36) { border-bottom: none; }
+
+        /* Column borders for 2x3 boxes */
+        .sudoku-cell:nth-child(3n) { border-right: 2px solid var(--primary); }
+        .sudoku-cell:nth-child(6n) { border-right: none; }
+
+        .fish-palette {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            max-width: 400px;
+        }
+
+        .fish-btn {
+            width: 50px;
+            height: 50px;
+            background: var(--surface-light);
+            border: 2px solid var(--surface);
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            padding: 4px;
+        }
+
+        .fish-btn:hover {
+            transform: scale(1.1);
+            border-color: var(--primary);
+        }
+
+        .fish-btn.selected {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px var(--primary);
+        }
+
+        .fish-btn img {
+            width: 36px;
+            height: 36px;
+            object-fit: contain;
+            image-rendering: pixelated;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.6rem;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 3px 3px 0 #3730a3;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 4px 4px 0 #3730a3;
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+        }
+
+        .feedback {
+            text-align: center;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.7rem;
+            min-height: 2rem;
+            padding: 0.5rem;
+            border-radius: 8px;
+        }
+
+        .feedback.success {
+            color: #22c55e;
+        }
+
+        .feedback.error {
+            color: #ef4444;
+        }
+
+        .feedback.hint {
+            color: #f59e0b;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="retour-btn">Retourner au port</a>
+    <div class="puzzle-wrapper">
+        <main class="puzzle-main">
+            <header>
+                <h1>Sudoku poisson de la Major</h1>
+                <p class="subtitle">Chaque ligne, colonne, et carré doit avoir un de chaque couleur de poissons (pas deux !)</p>
+            </header>
+
+            <div class="sudoku-container">
+                <div class="stats-bar">
+                    <span>Temps: <strong id="timer">00:00</strong></span>
+                    <span>Progression: <strong id="progress">0/36</strong></span>
+                </div>
+
+                <div class="sudoku-grid" id="sudoku-grid"></div>
+
+                <div class="fish-palette" id="fish-palette"></div>
+
+                <div class="controls">
+                    <button class="btn-secondary" id="validate-btn">Vérifier</button>
+                    <button class="btn-secondary" id="reveal-btn" style="background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 3px 3px 0 #b45309;">Révéler une case</button>
+                    <button class="btn-secondary" id="new-btn" style="background: linear-gradient(135deg, #22c55e, #16a34a); box-shadow: 3px 3px 0 #15803d;">Nouveau</button>
+                </div>
+
+                <div id="feedback" class="feedback"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Success Overlay -->
+    <div class="success-overlay" id="success-overlay">
+        <div class="success-box">
+            <h2>Bravo !</h2>
+            <p>Maintenant tu ne peux plus dire que tu sais pas faire un sudoku !</p>
+            <a href="../index.html" class="retour-btn">Retourner au port</a>
+        </div>
+    </div>
+
+    <!-- Fail Overlay -->
+    <div class="success-overlay" id="fail-overlay" style="display: none;">
+        <div class="success-box">
+            <h2>Oops...</h2>
+            <p>Ré-essaie ?</p>
+            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1rem;">
+                <button class="btn-play" id="continue-btn" style="background: linear-gradient(135deg, #22c55e, #16a34a); padding: 1rem 2rem; font-family: 'Press Start 2P', monospace; font-size: 0.7rem; border-radius: 8px; border: none; color: white; cursor: pointer; box-shadow: 4px 4px 0 #15803d;">Oui</button>
+                <a href="../index.html" style="background: linear-gradient(135deg, #ef4444, #dc2626); padding: 1rem 2rem; font-family: 'Press Start 2P', monospace; font-size: 0.7rem; border-radius: 8px; border: none; color: white; text-decoration: none; cursor: pointer; box-shadow: 4px 4px 0 #b91c1c;">Non</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/puzzle-nav.js"></script>
+    <script>
+        // Fish types (6 for 6x6 grid)
+        const FISH = [
+            { id: 0, name: 'blue', image: '../assets/images/fish-blue.png' },
+            { id: 1, name: 'gold', image: '../assets/images/fish-gold.png' },
+            { id: 2, name: 'green', image: '../assets/images/fish-green.png' },
+            { id: 3, name: 'red', image: '../assets/images/fish-red.png' },
+            { id: 4, name: 'pink', image: '../assets/images/fish-pink.png' },
+            { id: 5, name: 'purple', image: '../assets/images/fish-purple.png' }
+        ];
+
+        // 6x6 Sudoku puzzles (0 = empty, 1-6 = fish ID + 1)
+        // Grid is 6x6 with 2x3 boxes
+        const PUZZLES = [
+            // Puzzle 1 - Easy
+            [
+                [1, 0, 0, 0, 0, 6],
+                [0, 0, 4, 0, 0, 0],
+                [0, 6, 0, 0, 2, 0],
+                [0, 2, 0, 0, 5, 0],
+                [0, 0, 0, 3, 0, 0],
+                [5, 0, 0, 0, 0, 1]
+            ],
+            // Puzzle 2 - Medium
+            [
+                [0, 0, 3, 0, 0, 0],
+                [0, 1, 0, 0, 4, 0],
+                [2, 0, 0, 5, 0, 0],
+                [0, 0, 6, 0, 0, 3],
+                [0, 5, 0, 0, 2, 0],
+                [0, 0, 0, 1, 0, 0]
+            ],
+            // Puzzle 3 - Hard
+            [
+                [0, 0, 0, 3, 0, 0],
+                [0, 3, 0, 0, 0, 2],
+                [5, 0, 0, 0, 1, 0],
+                [0, 1, 0, 0, 0, 5],
+                [2, 0, 0, 0, 4, 0],
+                [0, 0, 4, 0, 0, 0]
+            ]
+        ];
+
+        // Solutions
+        const SOLUTIONS = [
+            [
+                [1, 3, 5, 4, 2, 6],
+                [2, 5, 4, 6, 3, 1],
+                [3, 6, 1, 5, 2, 4],
+                [4, 2, 3, 1, 5, 6],
+                [6, 1, 5, 3, 4, 2],
+                [5, 4, 2, 6, 1, 3]
+            ],
+            [
+                [4, 2, 3, 6, 5, 1],
+                [6, 1, 5, 2, 4, 3],
+                [2, 3, 1, 5, 6, 4],
+                [1, 4, 6, 3, 5, 2],
+                [3, 5, 4, 6, 2, 1],
+                [5, 6, 2, 1, 3, 4]
+            ],
+            [
+                [1, 2, 6, 3, 5, 4],
+                [4, 3, 5, 6, 1, 2],
+                [5, 6, 2, 4, 1, 3],
+                [3, 1, 6, 2, 4, 5],
+                [2, 5, 3, 1, 4, 6],
+                [6, 4, 1, 5, 3, 2]
+            ]
+        ];
+
+        let currentPuzzle = 0;
+        let grid = [];
+        let selectedFish = null;
+        let selectedCell = null;
+        let startTime = Date.now();
+        let timerInterval = null;
+
+        function initGame() {
+            currentPuzzle = Math.floor(Math.random() * PUZZLES.length);
+            grid = PUZZLES[currentPuzzle].map(row => [...row]);
+            selectedFish = null;
+            selectedCell = null;
+            startTime = Date.now();
+
+            renderGrid();
+            renderPalette();
+            updateProgress();
+
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 1000);
+
+            document.getElementById('feedback').className = 'feedback';
+            document.getElementById('feedback').textContent = '';
+        }
+
+        function renderGrid() {
+            const gridEl = document.getElementById('sudoku-grid');
+            gridEl.innerHTML = '';
+
+            for (let row = 0; row < 6; row++) {
+                for (let col = 0; col < 6; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'sudoku-cell';
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+
+                    const value = grid[row][col];
+                    if (value > 0) {
+                        cell.innerHTML = getFishDisplay(value);
+                        if (PUZZLES[currentPuzzle][row][col] !== 0) {
+                            cell.classList.add('fixed');
+                        }
+                    }
+
+                    cell.addEventListener('click', () => selectCell(row, col));
+                    gridEl.appendChild(cell);
+                }
+            }
+        }
+
+        function getFishDisplay(value) {
+            if (value >= 1 && value <= 6) {
+                const fish = FISH[value - 1];
+                return `<img src="${fish.image}" alt="${fish.name}">`;
+            }
+            return '';
+        }
+
+        function renderPalette() {
+            const paletteEl = document.getElementById('fish-palette');
+            paletteEl.innerHTML = '';
+
+            FISH.forEach((fish, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'fish-btn';
+                btn.dataset.id = index;
+                btn.innerHTML = `<img src="${fish.image}" alt="${fish.name}">`;
+                btn.addEventListener('click', () => selectFish(index + 1));
+                paletteEl.appendChild(btn);
+            });
+
+            // Add eraser button
+            const eraser = document.createElement('button');
+            eraser.className = 'fish-btn';
+            eraser.innerHTML = '🗑️';
+            eraser.title = 'Effacer';
+            eraser.addEventListener('click', () => selectFish(0));
+            paletteEl.appendChild(eraser);
+        }
+
+        function selectFish(fishId) {
+            selectedFish = fishId;
+            
+            // Update palette selection
+            document.querySelectorAll('.fish-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            if (fishId > 0) {
+                document.querySelector(`.fish-btn[data-id="${fishId - 1}"]`)?.classList.add('selected');
+            }
+
+            // If a cell is selected and fish is selected, fill it
+            if (selectedCell !== null && selectedFish !== null) {
+                placeFish(selectedCell.row, selectedCell.col);
+            }
+        }
+
+        function selectCell(row, col) {
+            // Deselect previous
+            document.querySelectorAll('.sudoku-cell').forEach(c => c.classList.remove('selected'));
+            
+            const cell = document.querySelector(`.sudoku-cell[data-row="${row}"][data-col="${col}"]`);
+            if (cell.classList.contains('fixed') || cell.classList.contains('revealed')) {
+                return;
+            }
+
+            cell.classList.add('selected');
+            selectedCell = { row, col };
+
+            // If fish already selected, place it
+            if (selectedFish !== null) {
+                placeFish(row, col);
+            }
+        }
+
+        function placeFish(row, col) {
+            if (selectedFish === null) return;
+            
+            const cell = document.querySelector(`.sudoku-cell[data-row="${row}"][data-col="${col}"]`);
+            if (cell.classList.contains('fixed') || cell.classList.contains('revealed')) return;
+
+            if (selectedFish === 0) {
+                // Eraser
+                grid[row][col] = 0;
+                cell.innerHTML = '';
+            } else {
+                grid[row][col] = selectedFish;
+                cell.innerHTML = getFishDisplay(selectedFish);
+            }
+
+            cell.classList.remove('correct', 'wrong');
+            updateProgress();
+        }
+
+        function updateProgress() {
+            let filled = 0;
+            for (let row = 0; row < 6; row++) {
+                for (let col = 0; col < 6; col++) {
+                    if (grid[row][col] !== 0) filled++;
+                }
+            }
+            document.getElementById('progress').textContent = `${filled}/36`;
+        }
+
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const secs = (elapsed % 60).toString().padStart(2, '0');
+            document.getElementById('timer').textContent = `${mins}:${secs}`;
+        }
+
+        function validate() {
+            const feedback = document.getElementById('feedback');
+            let correct = 0;
+            let total = 0;
+
+            for (let row = 0; row < 6; row++) {
+                for (let col = 0; col < 6; col++) {
+                    if (!PUZZLES[currentPuzzle][row][col]) {
+                        total++;
+                        const cell = document.querySelector(`.sudoku-cell[data-row="${row}"][data-col="${col}"]`);
+                        
+                        if (grid[row][col] === SOLUTIONS[currentPuzzle][row][col]) {
+                            correct++;
+                            cell.classList.remove('wrong');
+                            cell.classList.add('correct');
+                        } else {
+                            cell.classList.remove('correct');
+                            if (grid[row][col] !== 0) {
+                                cell.classList.add('wrong');
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (correct === total) {
+                feedback.className = 'feedback success';
+                feedback.textContent = '🎉 Parfait ! Tous les poissons sont à leur place !';
+                gameOver(true);
+            } else {
+                // Show fail overlay
+                document.getElementById('fail-overlay').style.display = 'flex';
+            }
+        }
+
+        function revealCell() {
+            if (selectedCell === null) {
+                const feedback = document.getElementById('feedback');
+                feedback.className = 'feedback hint';
+                feedback.textContent = 'Sélectionne une case d\'abord...';
+                return;
+            }
+
+            const { row, col } = selectedCell;
+            const cell = document.querySelector(`.sudoku-cell[data-row="${row}"][data-col="${col}"]`);
+            
+            if (cell.classList.contains('fixed') || cell.classList.contains('revealed')) {
+                const feedback = document.getElementById('feedback');
+                feedback.className = 'feedback hint';
+                feedback.textContent = 'Cette case est déjà remplie...';
+                return;
+            }
+
+            // Reveal the answer
+            const answer = SOLUTIONS[currentPuzzle][row][col];
+            grid[row][col] = answer;
+            cell.innerHTML = getFishDisplay(answer);
+            cell.classList.remove('wrong');
+            cell.classList.add('revealed');
+            
+            const feedback = document.getElementById('feedback');
+            feedback.className = 'feedback hint';
+            feedback.textContent = 'Case révélée !';
+            
+            updateProgress();
+        }
+
+        function gameOver(won) {
+            clearInterval(timerInterval);
+            if (won) {
+                document.getElementById('success-overlay').classList.add('show');
+            }
+        }
+
+        // Event listeners
+        document.getElementById('validate-btn').addEventListener('click', validate);
+        document.getElementById('reveal-btn').addEventListener('click', revealCell);
+        document.getElementById('new-btn').addEventListener('click', () => {
+            document.getElementById('success-overlay').classList.remove('show');
+            document.getElementById('fail-overlay').style.display = 'none';
+            initGame();
+        });
+
+        document.getElementById('continue-btn').addEventListener('click', () => {
+            document.getElementById('fail-overlay').style.display = 'none';
+        });
+
+        // Keyboard support
+        document.addEventListener('keydown', (e) => {
+            if (e.key >= '1' && e.key <= '6') {
+                selectFish(parseInt(e.key));
+            } else if (e.key === '0' || e.key === 'Delete' || e.key === 'Backspace') {
+                selectFish(0);
+            }
+        });
+
+        // Initialize
+        initGame();
+    </script>
+    <script src="../assets/js/puzzle-complete.js"></script>
+</body>
+</html>

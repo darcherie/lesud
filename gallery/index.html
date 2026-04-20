@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vincent's Gallery 📸</title>
+    <link rel="stylesheet" href="assets/css/gallery.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📸 Moments We've Shared</h1>
+            <p class="subtitle">A collection of memories, just for you</p>
+        </header>
+
+        <main>
+            <section class="gallery-intro">
+                <p>You made it through all the puzzles. You found the secret. Now here's what matters most — the moments we've captured together.</p>
+                <p>Each photo has a story. Each story has you in it.</p>
+            </section>
+
+            <section class="gallery-grid" id="photo-gallery">
+                <!-- Photos will be loaded by JS -->
+                <!-- Add your photos below in the PHOTOS array -->
+            </section>
+
+            <section class="gallery-footer">
+                <p>Happy Birthday, Vincent.</p>
+                <p class="signature">With all my love,<br>Hope 💜</p>
+            </section>
+        </main>
+    </div>
+
+    <!-- Lightbox for full-size images -->
+    <div id="lightbox" class="lightbox">
+        <button class="lightbox-close">&times;</button>
+        <img id="lightbox-image" src="" alt="">
+        <div class="lightbox-caption" id="lightbox-caption"></div>
+    </div>
+
+    <script>
+        // ============================================
+        // ADD YOUR PHOTOS HERE
+        // ============================================
+        // Each photo needs:
+        // - file: path to the image (put images in assets/images/)
+        // - caption: a short description or memory
+        // - year (optional): when the photo was taken
+        
+        const PHOTOS = [
+            {
+                file: 'assets/images/photo1.jpg',
+                caption: 'Our first sunset together at the Calanques',
+                year: 2023
+            },
+            {
+                file: 'assets/images/photo2.jpg',
+                caption: 'You showing me how to make proper bouillabaisse',
+                year: 2023
+            },
+            {
+                file: 'assets/images/photo3.jpg',
+                caption: 'That time you surprised me with flowers',
+                year: 2024
+            },
+            {
+                file: 'assets/images/photo4.jpg',
+                caption: 'Underwater adventures — your world',
+                year: 2024
+            },
+            {
+                file: 'assets/images/photo5.jpg',
+                caption: 'Lazy Sunday mornings',
+                year: 2024
+            },
+            {
+                file: 'assets/images/photo6.jpg',
+                caption: 'The view from your apartment window',
+                year: 2023
+            }
+            // Add more photos here...
+        ];
+        // ============================================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const gallery = document.getElementById('photo-gallery');
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-image');
+            const lightboxCaption = document.getElementById('lightbox-caption');
+            
+            // Render photos
+            PHOTOS.forEach((photo, index) => {
+                const card = document.createElement('div');
+                card.className = 'photo-card';
+                card.innerHTML = `
+                    <div class="photo-wrapper">
+                        <img src="${photo.file}" alt="${photo.caption}" loading="lazy">
+                    </div>
+                    <div class="photo-info">
+                        <p class="photo-caption">${photo.caption}</p>
+                        ${photo.year ? `<span class="photo-year">${photo.year}</span>` : ''}
+                    </div>
+                `;
+                card.addEventListener('click', () => openLightbox(photo));
+                gallery.appendChild(card);
+            });
+            
+            // Lightbox functions
+            function openLightbox(photo) {
+                lightboxImg.src = photo.file;
+                lightboxCaption.textContent = photo.caption;
+                lightbox.classList.add('active');
+            }
+            
+            document.querySelector('.lightbox-close').addEventListener('click', () => {
+                lightbox.classList.remove('active');
+            });
+            
+            lightbox.addEventListener('click', (e) => {
+                if (e.target === lightbox) {
+                    lightbox.classList.remove('active');
+                }
+            });
+            
+            // Keyboard navigation
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    lightbox.classList.remove('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

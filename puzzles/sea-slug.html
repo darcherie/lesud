@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L'Invasion des Limaces de Mer</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/puzzle.css">
+    <style>
+        #game-canvas {
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            border-radius: 8px;
+            display: block;
+            margin: 0 auto;
+        }
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: var(--surface-light);
+            border-radius: 8px;
+            font-size: 1.1rem;
+        }
+        .game-instructions {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--surface-light);
+            border-radius: 8px;
+        }
+        .game-instructions ul {
+            margin-left: 1.5rem;
+        }
+        .secret-link {
+            display: none;
+            text-align: center;
+            margin-top: 2rem;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 8px;
+            color: white;
+            text-decoration: none;
+            font-size: 1.1rem;
+            animation: pulse 2s infinite;
+        }
+        .secret-link.show {
+            display: block;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        .btn-play {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.7rem;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 4px 4px 0 #1e40af;
+            transition: all 0.2s;
+        }
+        .btn-play:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 #1e40af;
+        }
+        .btn-play:active {
+            transform: translate(0, 0);
+            box-shadow: 2px 2px 0 #1e40af;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="retour-btn">Retourner au port</a>
+    <div class="container">
+        <header>
+            <h1>Limaces de mer</h1>
+            <p class="subtitle">Elles veulent t'embrasser... évite-les pendant 30 secondes</p>
+        </header>
+
+        <main>
+            <div class="puzzle-content">
+                <div class="game-info">
+                    <div>Score: <span id="score">0</span></div>
+                    <div>Temps: <span id="timer">30</span>s</div>
+                    <div>Vies: <span id="lives">❤️❤️❤️</span></div>
+                    <div id="bubble-cd" style="color: #4ade80;">🫧 SPACE</div>
+                </div>
+
+                <canvas id="game-canvas" width="400" height="400"></canvas>
+
+                <button id="start-game" class="btn-play" style="margin-top: 1rem;">Commencer</button>
+                <div id="feedback" class="feedback"></div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../assets/js/puzzle-nav.js"></script>
+    <script>
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let gameRunning = false;
+        let score = 0;
+        let lives = 3;
+        let timeLeft = 30;
+        let player = { x: 200, y: 350, width: 30, height: 30, speed: 6 };
+        let slugs = [];
+        let keys = { left: false, right: false, space: false };
+        let gameLoop;
+        let timerInterval;
+        let playerHit = false;
+        let kissParticles = [];
+        let bubbles = [];
+        let bubbleCooldown = 0;
+        const BUBBLE_COOLDOWN_MAX = 3000; // 3 seconds
+        let canBubble = true;
+
+        function createSlug() {
+            return {
+                x: Math.random() * (canvas.width - 40),
+                y: -40,
+                width: 40,
+                height: 40,
+                speed: 0.8 + Math.random() * 1,
+                wobble: Math.random() * Math.PI * 2
+            };
+        }
+
+        function createKissParticles(x, y) {
+            for (let i = 0; i < 10; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 0.5 + Math.random() * 1.5;
+                kissParticles.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    life: 40 + Math.random() * 30,
+                    emoji: '💋'
+                });
+            }
+        }
+
+        function createBubbles() {
+            // Bubbles spread in a fan pattern (forward/up, not behind)
+            for (let i = 0; i < 12; i++) {
+                const angle = -Math.PI + (Math.PI * i / 11) + (Math.random() - 0.5) * 0.3;
+                const speed = 4 + Math.random() * 2;
+                bubbles.push({
+                    x: player.x + player.width/2,
+                    y: player.y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    life: 80 + Math.random() * 40
+                });
+            }
+            canBubble = false;
+            bubbleCooldown = BUBBLE_COOLDOWN_MAX;
+            setTimeout(() => { canBubble = true; }, BUBBLE_COOLDOWN_MAX);
+        }
+
+        function drawPlayer() {
+            ctx.font = '30px Arial';
+            if (playerHit && Math.floor(Date.now() / 100) % 2 === 0) {
+                ctx.globalAlpha = 0.3;
+            }
+            ctx.fillText('🤿', player.x, player.y + 25);
+            ctx.globalAlpha = 1;
+        }
+
+        function drawSlugs() {
+            ctx.font = '35px Arial';
+            slugs.forEach(slug => {
+                ctx.fillText('🐌', slug.x, slug.y + 30);
+            });
+        }
+
+        function drawKissParticles() {
+            ctx.font = '20px Arial';
+            kissParticles.forEach((p, i) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+                ctx.globalAlpha = p.life / 30;
+                ctx.fillText(p.emoji, p.x, p.y);
+                ctx.globalAlpha = 1;
+            });
+            kissParticles = kissParticles.filter(p => p.life > 0);
+        }
+
+        function drawBubbles() {
+            ctx.font = '25px Arial';
+            bubbles.forEach(b => {
+                ctx.globalAlpha = b.life / 100;
+                ctx.fillText('🫧', b.x, b.y);
+                ctx.globalAlpha = 1;
+            });
+        }
+
+        function updateBubbles() {
+            bubbles.forEach(b => {
+                b.x += b.vx;
+                b.y += b.vy;
+                b.life--;
+            });
+            bubbles = bubbles.filter(b => b.life > 0 && b.x > -30 && b.x < canvas.width + 30 && b.y > -30);
+        }
+
+        function update() {
+            if (keys.left && player.x > 0) player.x -= player.speed;
+            if (keys.right && player.x < canvas.width - player.width) player.x += player.speed;
+
+            slugs.forEach(slug => {
+                slug.y += slug.speed;
+                slug.wobble += 0.1;
+                slug.x += Math.sin(slug.wobble) * 2;
+                
+                // Magnetism towards player
+                const dx = player.x - slug.x;
+                const magnetism = 0.02; // How strongly slugs are attracted
+                slug.x += dx * magnetism;
+            });
+
+            const prevLength = slugs.length;
+            slugs = slugs.filter(slug => slug.y < canvas.height + 50);
+            score += (prevLength - slugs.length) * 10;
+
+            slugs.forEach((slug, index) => {
+                if (checkCollision(player, slug)) {
+                    // Create kiss particles at collision point
+                    createKissParticles(player.x + player.width/2, player.y + player.height/2);
+                    // Flash player
+                    playerHit = true;
+                    setTimeout(() => { playerHit = false; }, 500);
+                    
+                    lives--;
+                    updateLives();
+                    slugs.splice(index, 1);
+                    if (lives <= 0) endGame(false);
+                }
+            });
+
+            // Bubble-slug collision (repel slugs)
+            bubbles.forEach(bubble => {
+                slugs.forEach(slug => {
+                    const dx = slug.x + slug.width/2 - bubble.x;
+                    const dy = slug.y + slug.height/2 - bubble.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 50) {
+                        // Push slug away
+                        const pushStrength = 8;
+                        slug.x += (dx / dist) * pushStrength;
+                        slug.y += (dy / dist) * pushStrength;
+                    }
+                });
+            });
+
+            if (Math.random() < 0.02) slugs.push(createSlug());
+        }
+
+        function checkCollision(a, b) {
+            return a.x < b.x + b.width &&
+                   a.x + a.width > b.x &&
+                   a.y < b.y + b.height &&
+                   a.y + a.height > b.y;
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBubbles();
+            drawPlayer();
+            drawSlugs();
+            drawKissParticles();
+            document.getElementById('score').textContent = score;
+            
+            // Draw cooldown indicator
+            const cdEl = document.getElementById('bubble-cd');
+            if (canBubble) {
+                cdEl.textContent = '🫧 SPACE';
+                cdEl.style.color = '#4ade80';
+            } else {
+                const remaining = Math.ceil(bubbleCooldown / 1000);
+                cdEl.textContent = `🫧 ${remaining}s`;
+                cdEl.style.color = '#666';
+                bubbleCooldown -= 16;
+            }
+        }
+
+        function gameLoopFn() {
+            if (!gameRunning) return;
+            update();
+            updateBubbles();
+            draw();
+            gameLoop = requestAnimationFrame(gameLoopFn);
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = timeLeft;
+                if (timeLeft <= 0) endGame(true);
+            }, 1000);
+        }
+
+        function updateLives() {
+            document.getElementById('lives').textContent = '❤️'.repeat(lives);
+        }
+
+        function startGame() {
+            gameRunning = true;
+            score = 0;
+            lives = 3;
+            timeLeft = 30;
+            slugs = [];
+            player.x = 200;
+            
+            updateLives();
+            document.getElementById('timer').textContent = '30';
+            document.getElementById('feedback').className = 'feedback';
+            document.getElementById('feedback').textContent = '';
+            document.getElementById('start-game').style.display = 'none';
+            
+            startTimer();
+            gameLoopFn();
+        }
+
+        function endGame(won) {
+            gameRunning = false;
+            clearInterval(timerInterval);
+            cancelAnimationFrame(gameLoop);
+
+            if (won) {
+                document.getElementById('success-overlay').classList.add('show');
+            } else {
+                document.getElementById('fail-overlay').style.display = 'flex';
+            }
+        }
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowLeft' || e.key === 'a') keys.left = true;
+            if (e.key === 'ArrowRight' || e.key === 'd') keys.right = true;
+            if (e.key === ' ' && canBubble && gameRunning) {
+                e.preventDefault();
+                createBubbles();
+            }
+        });
+
+        document.addEventListener('keyup', e => {
+            if (e.key === 'ArrowLeft' || e.key === 'a') keys.left = false;
+            if (e.key === 'ArrowRight' || e.key === 'd') keys.right = false;
+        });
+
+        document.getElementById('start-game').addEventListener('click', startGame);
+    </script>
+
+    <!-- Success Overlay -->
+    <div class="success-overlay" id="success-overlay">
+        <div class="success-box">
+            <h2>Bravo !</h2>
+            <p>Pas de chance pour les limaces. J'espère que tu n'utiliseras pas tes nouvelles compétences d'évasion avec moi 💋</p>
+            <a href="../index.html" class="retour-btn">Retourner au port</a>
+        </div>
+    </div>
+
+    <!-- Fail Overlay -->
+    <div class="success-overlay" id="fail-overlay" style="display: none;">
+        <div class="success-box">
+            <h2>Oops...</h2>
+            <p>Ré-essaie ?</p>
+            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1rem;">
+                <button class="btn-play" id="retry-btn" style="background: linear-gradient(135deg, #22c55e, #16a34a); padding: 1rem 2rem; font-family: 'Press Start 2P', monospace; font-size: 0.7rem; border-radius: 8px; border: none; color: white; cursor: pointer; box-shadow: 4px 4px 0 #15803d;">Oui</button>
+                <a href="../index.html" style="background: linear-gradient(135deg, #ef4444, #dc2626); padding: 1rem 2rem; font-family: 'Press Start 2P', monospace; font-size: 0.7rem; border-radius: 8px; border: none; color: white; text-decoration: none; cursor: pointer; box-shadow: 4px 4px 0 #b91c1c;">Non</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Retry button
+        document.getElementById('retry-btn').addEventListener('click', () => {
+            document.getElementById('fail-overlay').style.display = 'none';
+            startGame();
+        });
+    </script>
+</body>
+</html>
