@@ -186,48 +186,41 @@
         ];
         
         let currentFrame = 0;
-        const frameDuration = 500; // ms per frame
+        const frameDuration = 500;
+        let animationInterval = null;
         
-        // Show first frame immediately (don't wait for all to load)
-        const bgElement = document.querySelector('.pixel-bg');
-        if (bgElement) {
-            bgElement.style.backgroundImage = `url('assets/images/${frames[0]}')`;
-        }
-        
-        // Preload frames and start animation
-        let loadedFrames = 0;
-        let animationStarted = false;
-        
-        function tryStartAnimation() {
-            if (animationStarted) return;
-            animationStarted = true;
+        function startAnimation() {
+            const bgElement = document.querySelector('.pixel-bg');
+            if (!bgElement) return;
             
-            setInterval(() => {
+            // Show first frame immediately
+            bgElement.style.backgroundImage = `url('assets/images/${frames[0]}')`;
+            
+            // Clear any existing interval
+            if (animationInterval) clearInterval(animationInterval);
+            
+            // Start cycling
+            animationInterval = setInterval(() => {
                 currentFrame = (currentFrame + 1) % frames.length;
                 bgElement.style.backgroundImage = `url('assets/images/${frames[currentFrame]}')`;
             }, frameDuration);
         }
         
+        // Preload frames
         frames.forEach((frame, i) => {
             const img = new Image();
-            img.onload = () => {
-                loadedFrames++;
-                if (loadedFrames === frames.length) {
-                    tryStartAnimation();
-                }
-            };
-            img.onerror = () => {
-                console.error('Failed to load:', frame);
-                loadedFrames++;
-                if (loadedFrames === frames.length) {
-                    tryStartAnimation();
-                }
-            };
             img.src = `assets/images/${frame}`;
         });
         
-        // Start animation after 2 seconds even if not all frames loaded
-        setTimeout(tryStartAnimation, 2000);
+        // Start on page load
+        document.addEventListener('DOMContentLoaded', startAnimation);
+        
+        // Handle browser back/forward navigation (bfcache)
+        window.addEventListener('pageshow', (event) => {
+            if (event.persisted) {
+                startAnimation();
+            }
+        });
 
         // Vincent bubble interaction - check if already dismissed
         let bubbleState = 0;
