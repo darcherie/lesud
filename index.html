@@ -188,27 +188,35 @@
         let currentFrame = 0;
         const frameDuration = 500;
         let animationInterval = null;
+        const cachedImages = [];
         
         function startAnimation() {
             const bgElement = document.querySelector('.pixel-bg');
             if (!bgElement) return;
             
-            // Show first frame immediately
-            bgElement.style.backgroundImage = `url('assets/images/${frames[0]}')`;
+            // Show first frame immediately from cached image
+            if (cachedImages[0]) {
+                bgElement.style.backgroundImage = `url('${cachedImages[0].src}')`;
+            }
             
             // Clear any existing interval
             if (animationInterval) clearInterval(animationInterval);
             
-            // Start cycling
+            // Start cycling using cached images
             animationInterval = setInterval(() => {
                 currentFrame = (currentFrame + 1) % frames.length;
-                bgElement.style.backgroundImage = `url('assets/images/${frames[currentFrame]}')`;
+                if (cachedImages[currentFrame]) {
+                    bgElement.style.backgroundImage = `url('${cachedImages[currentFrame].src}')`;
+                }
             }, frameDuration);
         }
         
-        // Preload frames
+        // Preload all frames into cache
         frames.forEach((frame, i) => {
             const img = new Image();
+            img.onload = () => {
+                cachedImages[i] = img;
+            };
             img.src = `assets/images/${frame}`;
         });
         

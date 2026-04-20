@@ -142,7 +142,7 @@
             position: absolute;
             left: 50%;
             transform: translateX(-50%);
-            width: 40px;
+            width: 30px;
             height: 40px;
             pointer-events: none;
         }
@@ -627,14 +627,14 @@
             beam.dataset.lane = beat.lane;
             beam.dataset.hitTime = beat.time;
             const color = BEAMS[beat.lane].color;
-            beam.innerHTML = `<svg width="40" height="60" viewBox="0 0 40 60">
+            beam.innerHTML = `<svg width="30" height="40" viewBox="0 0 30 40">
                 <defs>
                     <linearGradient id="beam-grad-${beat.lane}" x1="0%" y1="0%" x2="0%" y2="100%">
                         <stop offset="0%" style="stop-color:${color};stop-opacity:1" />
                         <stop offset="100%" style="stop-color:${color};stop-opacity:0.3" />
                     </linearGradient>
                 </defs>
-                <rect x="10" y="0" width="20" height="60" fill="url(#beam-grad-${beat.lane})" rx="5" />
+                <rect x="5" y="0" width="20" height="40" fill="url(#beam-grad-${beat.lane})" rx="5" />
             </svg>`;
             lane.appendChild(beam);
             beams.push({ element: beam, lane: beat.lane, hitTime: beat.time, hit: false });
