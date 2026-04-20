@@ -186,15 +186,21 @@
         ];
         
         let currentFrame = 0;
-        let loadedFrames = 0;
         const frameDuration = 500; // ms per frame
         
         // Preload all frames before starting animation
+        let loadedFrames = 0;
         frames.forEach((frame, i) => {
             const img = new Image();
             img.onload = () => {
                 loadedFrames++;
-                // Start animation only when all frames are loaded
+                if (loadedFrames === frames.length) {
+                    startAnimation();
+                }
+            };
+            img.onerror = () => {
+                console.error('Failed to load:', frame);
+                loadedFrames++;
                 if (loadedFrames === frames.length) {
                     startAnimation();
                 }
@@ -204,6 +210,8 @@
         
         function startAnimation() {
             const bgElement = document.querySelector('.pixel-bg');
+            if (!bgElement) return;
+            
             // Set first frame immediately
             bgElement.style.backgroundImage = `url('assets/images/${frames[0]}')`;
             
