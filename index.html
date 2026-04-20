@@ -6,6 +6,44 @@
     <title>Le Sud</title>
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/landing.css">
+    <!-- Preload all animation frames -->
+    <link rel="preload" as="image" href="assets/images/marseille1.png">
+    <link rel="preload" as="image" href="assets/images/marseille2.png">
+    <link rel="preload" as="image" href="assets/images/marseille3.png">
+    <link rel="preload" as="image" href="assets/images/marseille4.png">
+    <link rel="preload" as="image" href="assets/images/marseille5.png">
+    <link rel="preload" as="image" href="assets/images/marseille6.png">
+    <link rel="preload" as="image" href="assets/images/marseille7.png">
+    <link rel="preload" as="image" href="assets/images/marseille8.png">
+    <link rel="preload" as="image" href="assets/images/marseille9.png">
+    <link rel="preload" as="image" href="assets/images/marseille10.png">
+    <link rel="preload" as="image" href="assets/images/marseille11.png">
+    <link rel="preload" as="image" href="assets/images/marseille12.png">
+    <link rel="preload" as="image" href="assets/images/marseille13.png">
+    <link rel="preload" as="image" href="assets/images/marseille14.png">
+    <link rel="preload" as="image" href="assets/images/marseille15.png">
+    <link rel="preload" as="image" href="assets/images/marseille16.png">
+    <link rel="preload" as="image" href="assets/images/marseille17.png">
+    <link rel="preload" as="image" href="assets/images/marseille18.png">
+    <link rel="preload" as="image" href="assets/images/marseille19.png">
+    <link rel="preload" as="image" href="assets/images/marseille20.png">
+    <link rel="preload" as="image" href="assets/images/marseille21.png">
+    <link rel="preload" as="image" href="assets/images/marseille22.png">
+    <link rel="preload" as="image" href="assets/images/marseille23.png">
+    <link rel="preload" as="image" href="assets/images/marseille24.png">
+    <link rel="preload" as="image" href="assets/images/marseille25.png">
+    <link rel="preload" as="image" href="assets/images/marseille26.png">
+    <link rel="preload" as="image" href="assets/images/marseille27.png">
+    <link rel="preload" as="image" href="assets/images/marseille28.png">
+    <link rel="preload" as="image" href="assets/images/marseille29.png">
+    <link rel="preload" as="image" href="assets/images/marseille30.png">
+    <link rel="preload" as="image" href="assets/images/marseille31.png">
+    <link rel="preload" as="image" href="assets/images/marseille32.png">
+    <link rel="preload" as="image" href="assets/images/marseille33.png">
+    <link rel="preload" as="image" href="assets/images/marseille34.png">
+    <link rel="preload" as="image" href="assets/images/marseille35.png">
+    <link rel="preload" as="image" href="assets/images/marseille36.png">
+    <link rel="preload" as="image" href="assets/images/marseille37.png">
     <style>
         /* Clickable Hotspots */
         .hotspot {
@@ -188,37 +226,36 @@
         let currentFrame = 0;
         const frameDuration = 500;
         let animationInterval = null;
+        
+        // Preload all frames
         const cachedImages = [];
+        let loadedCount = 0;
+        
+        frames.forEach((frame, i) => {
+            const img = new Image();
+            img.onload = () => {
+                cachedImages[i] = img;
+                loadedCount++;
+            };
+            img.src = `assets/images/${frame}`;
+        });
         
         function startAnimation() {
             const bgElement = document.querySelector('.pixel-bg');
             if (!bgElement) return;
             
-            // Show first frame immediately from cached image
-            if (cachedImages[0]) {
-                bgElement.style.backgroundImage = `url('${cachedImages[0].src}')`;
-            }
-            
             // Clear any existing interval
             if (animationInterval) clearInterval(animationInterval);
             
-            // Start cycling using cached images
+            // Show first frame
+            bgElement.style.backgroundImage = `url('assets/images/${frames[0]}')`;
+            
+            // Start cycling
             animationInterval = setInterval(() => {
                 currentFrame = (currentFrame + 1) % frames.length;
-                if (cachedImages[currentFrame]) {
-                    bgElement.style.backgroundImage = `url('${cachedImages[currentFrame].src}')`;
-                }
+                bgElement.style.backgroundImage = `url('assets/images/${frames[currentFrame]}')`;
             }, frameDuration);
         }
-        
-        // Preload all frames into cache
-        frames.forEach((frame, i) => {
-            const img = new Image();
-            img.onload = () => {
-                cachedImages[i] = img;
-            };
-            img.src = `assets/images/${frame}`;
-        });
         
         // Start on page load
         document.addEventListener('DOMContentLoaded', startAnimation);
