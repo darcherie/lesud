@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎂 Joyeux Anniversaire Vincent</title>
+    <title>Le Sud</title>
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/landing.css">
     <style>
@@ -188,39 +188,46 @@
         let currentFrame = 0;
         const frameDuration = 500; // ms per frame
         
-        // Preload all frames before starting animation
+        // Show first frame immediately (don't wait for all to load)
+        const bgElement = document.querySelector('.pixel-bg');
+        if (bgElement) {
+            bgElement.style.backgroundImage = `url('assets/images/${frames[0]}')`;
+        }
+        
+        // Preload frames and start animation
         let loadedFrames = 0;
+        let animationStarted = false;
+        
+        function tryStartAnimation() {
+            if (animationStarted) return;
+            animationStarted = true;
+            
+            setInterval(() => {
+                currentFrame = (currentFrame + 1) % frames.length;
+                bgElement.style.backgroundImage = `url('assets/images/${frames[currentFrame]}')`;
+            }, frameDuration);
+        }
+        
         frames.forEach((frame, i) => {
             const img = new Image();
             img.onload = () => {
                 loadedFrames++;
                 if (loadedFrames === frames.length) {
-                    startAnimation();
+                    tryStartAnimation();
                 }
             };
             img.onerror = () => {
                 console.error('Failed to load:', frame);
                 loadedFrames++;
                 if (loadedFrames === frames.length) {
-                    startAnimation();
+                    tryStartAnimation();
                 }
             };
             img.src = `assets/images/${frame}`;
         });
         
-        function startAnimation() {
-            const bgElement = document.querySelector('.pixel-bg');
-            if (!bgElement) return;
-            
-            // Set first frame immediately
-            bgElement.style.backgroundImage = `url('assets/images/${frames[0]}')`;
-            
-            // Then start cycling
-            setInterval(() => {
-                currentFrame = (currentFrame + 1) % frames.length;
-                bgElement.style.backgroundImage = `url('assets/images/${frames[currentFrame]}')`;
-            }, frameDuration);
-        }
+        // Start animation after 2 seconds even if not all frames loaded
+        setTimeout(tryStartAnimation, 2000);
 
         // Vincent bubble interaction - check if already dismissed
         let bubbleState = 0;
