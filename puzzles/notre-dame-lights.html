@@ -410,21 +410,20 @@
 
     <script src="../assets/js/puzzle-nav.js"></script>
     <script>
-        // Beam colors mapped to lanes
-        // Dash line beams for game area (falling notes)
+        // Beam colors mapped to lanes (using inline SVG, no images needed)
         const BEAMS = [
-            { lane: 0, color: 'blue', image: '../assets/images/beam-blue.png' },
-            { lane: 1, color: 'green', image: '../assets/images/beam-green.png' },
-            { lane: 2, color: 'yellow', image: '../assets/images/beam-yellow.png' },
-            { lane: 3, color: 'red', image: '../assets/images/beam-red.png' }
+            { lane: 0, color: '#3b82f6', name: 'blue' },
+            { lane: 1, color: '#22c55e', name: 'green' },
+            { lane: 2, color: '#eab308', name: 'yellow' },
+            { lane: 3, color: '#ef4444', name: 'red' }
         ];
 
         // Beam source sprites for Notre-Dame overlay
         const BEAM_SOURCES = [
-            { lane: 0, image: '../assets/images/blue-beam.png' },
-            { lane: 1, image: '../assets/images/beam-green.png' },
-            { lane: 2, image: '../assets/images/beam-yellow.png' },
-            { lane: 3, image: '../assets/images/red-beam.png' }
+            { lane: 0, color: '#3b82f6' },
+            { lane: 1, color: '#22c55e' },
+            { lane: 2, color: '#eab308' },
+            { lane: 3, color: '#ef4444' }
         ];
 
         // Beat map - randomized, unpredictable pattern
@@ -644,7 +643,16 @@
             beam.className = 'beam';
             beam.dataset.lane = beat.lane;
             beam.dataset.hitTime = beat.time;
-            beam.innerHTML = `<img src="${BEAMS[beat.lane].image}" alt="${BEAMS[beat.lane].color}">`;
+            const color = BEAMS[beat.lane].color;
+            beam.innerHTML = `<svg width="40" height="60" viewBox="0 0 40 60">
+                <defs>
+                    <linearGradient id="beam-grad-${beat.lane}" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:${color};stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:${color};stop-opacity:0.3" />
+                    </linearGradient>
+                </defs>
+                <rect x="10" y="0" width="20" height="60" fill="url(#beam-grad-${beat.lane})" rx="5" />
+            </svg>`;
             lane.appendChild(beam);
             beams.push({ element: beam, lane: beat.lane, hitTime: beat.time, hit: false });
         }

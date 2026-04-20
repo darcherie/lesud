@@ -28,14 +28,6 @@
             height: 9%;
         }
         
-        /* Sailboats (Sailing Game) - middle left */
-        .hotspot-sailboats {
-            top: 40%;
-            left: 8%;
-            width: 18%;
-            height: 25%;
-        }
-        
         /* Newspaper (Crossword) - front left, smaller */
         .hotspot-newspaper {
             bottom: 8%;
@@ -183,27 +175,44 @@
             'marseille27.png',
             'marseille28.png',
             'marseille29.png',
-            'marseille30.png'
+            'marseille30.png',
+            'marseille31.png',
+            'marseille32.png',
+            'marseille33.png',
+            'marseille34.png',
+            'marseille35.png',
+            'marseille36.png',
+            'marseille37.png'
         ];
         
         let currentFrame = 0;
-        const bgElement = document.querySelector('.pixel-bg');
-        const frameDuration = 500; // ms per frame - adjust as needed
+        let loadedFrames = 0;
+        const frameDuration = 500; // ms per frame
         
-        // Preload frames
+        // Preload all frames before starting animation
         frames.forEach((frame, i) => {
             const img = new Image();
+            img.onload = () => {
+                loadedFrames++;
+                // Start animation only when all frames are loaded
+                if (loadedFrames === frames.length) {
+                    startAnimation();
+                }
+            };
             img.src = `assets/images/${frame}`;
         });
         
-        // Cycle through frames
-        function animateBackground() {
-            bgElement.style.backgroundImage = `url('assets/images/${frames[currentFrame]}')`;
-            currentFrame = (currentFrame + 1) % frames.length;
+        function startAnimation() {
+            const bgElement = document.querySelector('.pixel-bg');
+            // Set first frame immediately
+            bgElement.style.backgroundImage = `url('assets/images/${frames[0]}')`;
+            
+            // Then start cycling
+            setInterval(() => {
+                currentFrame = (currentFrame + 1) % frames.length;
+                bgElement.style.backgroundImage = `url('assets/images/${frames[currentFrame]}')`;
+            }, frameDuration);
         }
-        
-        // Start animation
-        setInterval(animateBackground, frameDuration);
 
         // Vincent bubble interaction - check if already dismissed
         let bubbleState = 0;
