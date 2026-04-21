@@ -109,8 +109,17 @@
             display: flex;
             gap: 0.5rem;
             justify-content: center;
-            flex-wrap: wrap;
-            max-width: 400px;
+            flex-wrap: nowrap;
+        }
+
+        .fish-palette.hard .fish-btn {
+            width: 44px;
+            height: 44px;
+        }
+
+        .fish-palette.hard .fish-btn img {
+            width: 32px;
+            height: 32px;
         }
 
         .fish-btn {
@@ -559,6 +568,13 @@
             paletteEl.innerHTML = '';
             const fish = getFish();
             const size = getGridSize();
+
+            // Add class for smaller buttons in hard mode
+            if (gameMode === 'hard') {
+                paletteEl.classList.add('hard');
+            } else {
+                paletteEl.classList.remove('hard');
+            }
 
             fish.slice(0, size).forEach((f, index) => {
                 const btn = document.createElement('button');
