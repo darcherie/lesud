@@ -917,17 +917,13 @@
         document.getElementById('new-btn').addEventListener('click', () => {
             document.getElementById('success-overlay').classList.remove('show');
             document.getElementById('fail-overlay').style.display = 'none';
+            // Read current mode from select and update gameMode before generating new puzzle
+            gameMode = document.getElementById('mode-select').value;
             initGame();
         });
 
         document.getElementById('continue-btn').addEventListener('click', () => {
             document.getElementById('fail-overlay').style.display = 'none';
-        });
-
-        // Mode change listener
-        document.getElementById('mode-select').addEventListener('change', (e) => {
-            gameMode = e.target.value;
-            initGame();
         });
 
         // Keyboard support
