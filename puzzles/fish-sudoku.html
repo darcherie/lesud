@@ -196,6 +196,7 @@
                 <div class="stats-bar">
                     <span>Temps: <strong id="timer">00:00</strong></span>
                     <span>Progression: <strong id="progress">0/36</strong></span>
+                    <span>Solutions: <strong id="solutions">...</strong></span>
                 </div>
 
                 <div class="sudoku-grid" id="sudoku-grid"></div>
@@ -323,6 +324,7 @@
             renderGrid();
             renderPalette();
             updateProgress();
+            updateSolutionCount();
 
             if (timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(updateTimer, 1000);
@@ -435,6 +437,7 @@
 
             cell.classList.remove('correct', 'wrong');
             updateProgress();
+            updateSolutionCount();
         }
 
         function updateProgress() {
@@ -452,6 +455,62 @@
             const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
             const secs = (elapsed % 60).toString().padStart(2, '0');
             document.getElementById('timer').textContent = `${mins}:${secs}`;
+        }
+
+        // Solution counter using backtracking
+        function countSolutions(gridState, limit = 100) {
+            let count = 0;
+            
+            function isValid(grid, row, col, num) {
+                // Check row
+                for (let c = 0; c < 6; c++) {
+                    if (grid[row][c] === num) return false;
+                }
+                // Check column
+                for (let r = 0; r < 6; r++) {
+                    if (grid[r][col] === num) return false;
+                }
+                // Check 2x3 box
+                const boxRow = Math.floor(row / 2) * 2;
+                const boxCol = Math.floor(col / 3) * 3;
+                for (let r = boxRow; r < boxRow + 2; r++) {
+                    for (let c = boxCol; c < boxCol + 3; c++) {
+                        if (grid[r][c] === num) return false;
+                    }
+                }
+                return true;
+            }
+
+            function solve(grid) {
+                if (count >= limit) return;
+                
+                // Find first empty cell
+                for (let row = 0; row < 6; row++) {
+                    for (let col = 0; col < 6; col++) {
+                        if (grid[row][col] === 0) {
+                            for (let num = 1; num <= 6; num++) {
+                                if (isValid(grid, row, col, num)) {
+                                    grid[row][col] = num;
+                                    solve(grid);
+                                    grid[row][col] = 0;
+                                }
+                            }
+                            return; // No valid number found
+                        }
+                    }
+                }
+                // All cells filled - found a solution
+                count++;
+            }
+
+            const gridCopy = gridState.map(row => [...row]);
+            solve(gridCopy);
+            return count >= limit ? `${limit}+` : count;
+        }
+
+        function updateSolutionCount() {
+            const count = countSolutions(grid, 100);
+            document.getElementById('solutions').textContent = count;
         }
 
         function validate() {
