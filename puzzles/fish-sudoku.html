@@ -461,6 +461,7 @@
         let startTime = Date.now();
         let timerInterval = null;
         let revealMode = false;
+        let lastPuzzle = { easy: -1, hard: -1 }; // Track last puzzle per mode
 
         function initGame() {
             const size = getGridSize();
@@ -475,8 +476,13 @@
                     attempts++;
                 } while (countSolutions(grid, 1) < 1 && attempts < puzzles.length);
             } else {
-                // Hard mode: use pre-made puzzles that are known to have unique solutions
-                currentPuzzle = Math.floor(Math.random() * puzzles.length);
+                // Hard mode: use pre-made puzzles, avoid same puzzle twice in a row
+                let newIndex;
+                do {
+                    newIndex = Math.floor(Math.random() * puzzles.length);
+                } while (newIndex === lastPuzzle.hard && puzzles.length > 1);
+                currentPuzzle = newIndex;
+                lastPuzzle.hard = currentPuzzle;
                 grid = puzzles[currentPuzzle].map(row => [...row]);
             }
             
