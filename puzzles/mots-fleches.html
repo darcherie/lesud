@@ -262,6 +262,7 @@
         // Direction toggle
         let currentDirection = 'horizontal';
         let dirIndicator = null;
+        let lastFocusedInput = null; // Track last focused cell for reveal
         
         function focusWord(word) {
             currentDirection = word.direction;
@@ -397,8 +398,9 @@
         }
 
         function revealLetter() {
-            const activeInput = document.activeElement;
-            if (!activeInput.matches('.grid-cell.active input')) {
+            // Use last focused input since button click steals focus
+            const activeInput = lastFocusedInput;
+            if (!activeInput || activeInput.disabled) {
                 const feedback = document.getElementById('feedback');
                 feedback.className = 'feedback hint';
                 feedback.textContent = 'Cliquez sur une case d\'abord...';
@@ -615,6 +617,7 @@
             // Select text on focus
             document.addEventListener('focusin', e => {
                 if (e.target.matches('.grid-cell.active input')) {
+                    lastFocusedInput = e.target;
                     e.target.select();
                     highlightCurrentWord();
                 }
