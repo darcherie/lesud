@@ -625,6 +625,7 @@
         let currentPuzzle = 0;
         let grid = [];
         let originalGrid = []; // Store original puzzle state for clearAll
+        let solutionGrid = []; // Store solution for reveal mode
         let selectedFish = null;
         let selectedCell = null;
         let startTime = Date.now();
@@ -644,6 +645,7 @@
                 const targetClues = 12 + Math.floor(Math.random() * 5); // 12-16 clues
                 const result = generatePuzzle6x6(targetClues);
                 grid = result.puzzle.map(row => [...row]);
+                solutionGrid = result.solution.map(row => [...row]);
             } else {
                 // Hard mode: use pre-made puzzles, avoid same puzzle twice in a row
                 let newIndex;
@@ -653,6 +655,8 @@
                 currentPuzzle = newIndex;
                 lastPuzzle.hard = currentPuzzle;
                 grid = puzzles[currentPuzzle].map(row => [...row]);
+                // Hard mode doesn't have stored solution - countSolutions will be used
+                solutionGrid = [];
             }
             
             // Store original grid for clearAll
@@ -802,8 +806,14 @@
                     return; // Can't reveal already filled cells
                 }
                 
-                // Find a valid value for this cell
-                const validValue = findValidValue(row, col);
+                // Use stored solution for easy mode, or find valid value for hard mode
+                let validValue;
+                if (gameMode === 'easy' && solutionGrid.length > 0) {
+                    validValue = solutionGrid[row][col];
+                } else {
+                    validValue = findValidValue(row, col);
+                }
+                
                 if (validValue) {
                     grid[row][col] = validValue;
                     cell.innerHTML = getFishDisplay(validValue);
@@ -1168,7 +1178,7 @@
                         grid[row][col] = 0;
                         const cell = document.querySelector(`.sudoku-cell[data-row="${row}"][data-col="${col}"]`);
                         cell.innerHTML = '';
-                        cell.classList.remove('correct', 'wrong', 'reveal-highlight');
+                        cell.classList.remove('correct', 'wrong', 'reveal-highlight', 'selected');
                     }
                 }
             }
