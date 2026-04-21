@@ -270,8 +270,11 @@
 
     <script src="../assets/js/puzzle-nav.js"></script>
     <script>
-        // Fish types (6 for 6x6 grid)
-        const FISH = [
+        // Game mode
+        let gameMode = 'easy'; // 'easy' or 'hard'
+        
+        // Fish types
+        const FISH_EASY = [
             { id: 0, name: 'blue', image: '../assets/images/fish-blue.png' },
             { id: 1, name: 'gold', image: '../assets/images/fish-gold.png' },
             { id: 2, name: 'green', image: '../assets/images/fish-green.png' },
@@ -280,10 +283,29 @@
             { id: 5, name: 'purple', image: '../assets/images/fish-purple.png' }
         ];
 
+        const FISH_HARD = [
+            { id: 0, name: 'blue', image: '../assets/images/fish-blue.png' },
+            { id: 1, name: 'gold', image: '../assets/images/fish-gold.png' },
+            { id: 2, name: 'green', image: '../assets/images/fish-green.png' },
+            { id: 3, name: 'red', image: '../assets/images/fish-red.png' },
+            { id: 4, name: 'pink', image: '../assets/images/fish-pink.png' },
+            { id: 5, name: 'purple', image: '../assets/images/fish-purple.png' },
+            { id: 6, name: 'cyan', image: '../assets/images/fish-cyan.png' },
+            { id: 7, name: 'orange', image: '../assets/images/fish-orange.png' },
+            { id: 8, name: 'navy', image: '../assets/images/fish-navy.png' }
+        ];
+
+        // Get current FISH array based on mode
+        function getFish() {
+            return gameMode === 'easy' ? FISH_EASY : FISH_HARD;
+        }
+
+        function getGridSize() {
+            return gameMode === 'easy' ? 6 : 9;
+        }
+
         // 6x6 Sudoku puzzles (0 = empty, 1-6 = fish ID + 1)
-        // Grid is 6x6 with 2x3 boxes
-        const PUZZLES = [
-            // Puzzle 1 - Easy
+        const PUZZLES_EASY = [
             [
                 [1, 0, 0, 0, 0, 6],
                 [0, 0, 4, 0, 0, 0],
@@ -292,7 +314,6 @@
                 [0, 0, 0, 3, 0, 0],
                 [5, 0, 0, 0, 0, 1]
             ],
-            // Puzzle 2 - Medium
             [
                 [0, 0, 3, 0, 0, 0],
                 [0, 1, 0, 0, 4, 0],
@@ -301,7 +322,6 @@
                 [0, 5, 0, 0, 2, 0],
                 [0, 0, 0, 1, 0, 0]
             ],
-            // Puzzle 3 - Hard
             [
                 [0, 0, 0, 3, 0, 0],
                 [0, 3, 0, 0, 0, 2],
@@ -312,33 +332,35 @@
             ]
         ];
 
-        // Solutions
-        const SOLUTIONS = [
+        // 9x9 Sudoku puzzles (0 = empty, 1-9 = fish ID + 1)
+        const PUZZLES_HARD = [
             [
-                [1, 3, 5, 4, 2, 6],
-                [2, 5, 4, 6, 3, 1],
-                [3, 6, 1, 5, 2, 4],
-                [4, 2, 3, 1, 5, 6],
-                [6, 1, 5, 3, 4, 2],
-                [5, 4, 2, 6, 1, 3]
+                [5, 3, 0, 0, 7, 0, 0, 0, 0],
+                [6, 0, 0, 1, 9, 5, 0, 0, 0],
+                [0, 9, 8, 0, 0, 0, 0, 6, 0],
+                [8, 0, 0, 0, 6, 0, 0, 0, 3],
+                [4, 0, 0, 8, 0, 3, 0, 0, 1],
+                [7, 0, 0, 0, 2, 0, 0, 0, 6],
+                [0, 6, 0, 0, 0, 0, 2, 8, 0],
+                [0, 0, 0, 4, 1, 9, 0, 0, 5],
+                [0, 0, 0, 0, 8, 0, 0, 7, 9]
             ],
             [
-                [4, 2, 3, 6, 5, 1],
-                [6, 1, 5, 2, 4, 3],
-                [2, 3, 1, 5, 6, 4],
-                [1, 4, 6, 3, 5, 2],
-                [3, 5, 4, 6, 2, 1],
-                [5, 6, 2, 1, 3, 4]
-            ],
-            [
-                [1, 2, 6, 3, 5, 4],
-                [4, 3, 5, 6, 1, 2],
-                [5, 6, 2, 4, 1, 3],
-                [3, 1, 6, 2, 4, 5],
-                [2, 5, 3, 1, 4, 6],
-                [6, 4, 1, 5, 3, 2]
+                [0, 0, 0, 2, 6, 0, 7, 0, 1],
+                [6, 8, 0, 0, 7, 0, 0, 9, 0],
+                [1, 9, 0, 0, 0, 4, 5, 0, 0],
+                [8, 2, 0, 1, 0, 0, 0, 4, 0],
+                [0, 0, 4, 6, 0, 2, 9, 0, 0],
+                [0, 5, 0, 0, 0, 3, 0, 2, 8],
+                [0, 0, 9, 3, 0, 0, 0, 7, 4],
+                [0, 4, 0, 0, 5, 0, 0, 3, 6],
+                [7, 0, 3, 0, 1, 8, 0, 0, 0]
             ]
         ];
+
+        function getPuzzles() {
+            return gameMode === 'easy' ? PUZZLES_EASY : PUZZLES_HARD;
+        }
 
         let currentPuzzle = 0;
         let grid = [];
@@ -349,13 +371,16 @@
         let revealMode = false;
 
         function initGame() {
+            const size = getGridSize();
+            const puzzles = getPuzzles();
+            
             // Find a puzzle with at least one solution
             let attempts = 0;
             do {
-                currentPuzzle = Math.floor(Math.random() * PUZZLES.length);
-                grid = PUZZLES[currentPuzzle].map(row => [...row]);
+                currentPuzzle = Math.floor(Math.random() * puzzles.length);
+                grid = puzzles[currentPuzzle].map(row => [...row]);
                 attempts++;
-            } while (countSolutions(grid, 1) < 1 && attempts < PUZZLES.length);
+            } while (countSolutions(grid, 1) < 1 && attempts < puzzles.length);
             
             selectedFish = null;
             selectedCell = null;
@@ -381,9 +406,44 @@
         function renderGrid() {
             const gridEl = document.getElementById('sudoku-grid');
             gridEl.innerHTML = '';
+            gridEl.className = `sudoku-grid ${gameMode}`;
 
-            for (let row = 0; row < 6; row++) {
-                for (let col = 0; col < 6; col++) {
+            const size = getGridSize();
+            const puzzles = getPuzzles();
+            
+            // Clear any existing dynamic border styles
+            const existingStyles = document.getElementById('dynamic-border-styles');
+            if (existingStyles) existingStyles.remove();
+            
+            // Add dynamic border styles based on grid size
+            const styleEl = document.createElement('style');
+            styleEl.id = 'dynamic-border-styles';
+            
+            if (gameMode === 'easy') {
+                // 6x6 grid with 2x3 boxes
+                styleEl.textContent = `
+                    .sudoku-cell:nth-child(n+7):nth-child(-n+12) { border-bottom: 4px solid var(--primary); }
+                    .sudoku-cell:nth-child(n+19):nth-child(-n+24) { border-bottom: 4px solid var(--primary); }
+                    .sudoku-cell:nth-child(n+31):nth-child(-n+36) { border-bottom: none; }
+                    .sudoku-cell:nth-child(3n) { border-right: 4px solid var(--primary); }
+                    .sudoku-cell:nth-child(6n) { border-right: none; }
+                `;
+            } else {
+                // 9x9 grid with 3x3 boxes
+                styleEl.textContent = `
+                    .sudoku-cell:nth-child(n+1):nth-child(-n+9) { border-bottom: 4px solid var(--primary); }
+                    .sudoku-cell:nth-child(n+19):nth-child(-n+27) { border-bottom: 4px solid var(--primary); }
+                    .sudoku-cell:nth-child(n+55):nth-child(-n+63) { border-bottom: 4px solid var(--primary); }
+                    .sudoku-cell:nth-child(n+73):nth-child(-n+81) { border-bottom: none; }
+                    .sudoku-cell:nth-child(9n+3) { border-right: 4px solid var(--primary); }
+                    .sudoku-cell:nth-child(9n+6) { border-right: 4px solid var(--primary); }
+                    .sudoku-cell:nth-child(9n) { border-right: none; }
+                `;
+            }
+            document.head.appendChild(styleEl);
+
+            for (let row = 0; row < size; row++) {
+                for (let col = 0; col < size; col++) {
                     const cell = document.createElement('div');
                     cell.className = 'sudoku-cell';
                     cell.dataset.row = row;
@@ -392,7 +452,7 @@
                     const value = grid[row][col];
                     if (value > 0) {
                         cell.innerHTML = getFishDisplay(value);
-                        if (PUZZLES[currentPuzzle][row][col] !== 0) {
+                        if (puzzles[currentPuzzle][row][col] !== 0) {
                             cell.classList.add('fixed');
                         }
                     }
@@ -404,9 +464,11 @@
         }
 
         function getFishDisplay(value) {
-            if (value >= 1 && value <= 6) {
-                const fish = FISH[value - 1];
-                return `<img src="${fish.image}" alt="${fish.name}">`;
+            const fish = getFish();
+            const size = getGridSize();
+            if (value >= 1 && value <= size) {
+                const f = fish[value - 1];
+                return `<img src="${f.image}" alt="${f.name}">`;
             }
             return '';
         }
@@ -414,12 +476,14 @@
         function renderPalette() {
             const paletteEl = document.getElementById('fish-palette');
             paletteEl.innerHTML = '';
+            const fish = getFish();
+            const size = getGridSize();
 
-            FISH.forEach((fish, index) => {
+            fish.slice(0, size).forEach((f, index) => {
                 const btn = document.createElement('button');
                 btn.className = 'fish-btn';
                 btn.dataset.id = index;
-                btn.innerHTML = `<img src="${fish.image}" alt="${fish.name}">`;
+                btn.innerHTML = `<img src="${f.image}" alt="${f.name}">`;
                 btn.addEventListener('click', () => selectFish(index + 1));
                 paletteEl.appendChild(btn);
             });
@@ -501,7 +565,8 @@
                 }
             }
             // Fallback: just find any valid placement
-            for (let val = 1; val <= 6; val++) {
+            const size = getGridSize();
+            for (let val = 1; val <= size; val++) {
                 if (isValidPlacement(row, col, val)) {
                     return val;
                 }
@@ -510,20 +575,32 @@
         }
         
         function isValidPlacement(row, col, val) {
+            const size = getGridSize();
+            
             // Check row
-            for (let c = 0; c < 6; c++) {
+            for (let c = 0; c < size; c++) {
                 if (c !== col && grid[row][c] === val) return false;
             }
             // Check column
-            for (let r = 0; r < 6; r++) {
+            for (let r = 0; r < size; r++) {
                 if (r !== row && grid[r][col] === val) return false;
             }
-            // Check 2x3 box (6 cells for 6 values)
-            const boxRow = Math.floor(row / 2) * 2;
-            const boxCol = Math.floor(col / 3) * 3;
-            for (let r = boxRow; r < boxRow + 2; r++) {
-                for (let c = boxCol; c < boxCol + 3; c++) {
-                    if ((r !== row || c !== col) && grid[r][c] === val) return false;
+            // Check box (2x3 for easy, 3x3 for hard)
+            if (gameMode === 'easy') {
+                const boxRow = Math.floor(row / 2) * 2;
+                const boxCol = Math.floor(col / 3) * 3;
+                for (let r = boxRow; r < boxRow + 2; r++) {
+                    for (let c = boxCol; c < boxCol + 3; c++) {
+                        if ((r !== row || c !== col) && grid[r][c] === val) return false;
+                    }
+                }
+            } else {
+                const boxRow = Math.floor(row / 3) * 3;
+                const boxCol = Math.floor(col / 3) * 3;
+                for (let r = boxRow; r < boxRow + 3; r++) {
+                    for (let c = boxCol; c < boxCol + 3; c++) {
+                        if ((r !== row || c !== col) && grid[r][c] === val) return false;
+                    }
                 }
             }
             return true;
@@ -583,13 +660,15 @@
         }
 
         function updateProgress() {
+            const size = getGridSize();
+            const total = size * size;
             let filled = 0;
-            for (let row = 0; row < 6; row++) {
-                for (let col = 0; col < 6; col++) {
+            for (let row = 0; row < size; row++) {
+                for (let col = 0; col < size; col++) {
                     if (grid[row][col] !== 0) filled++;
                 }
             }
-            document.getElementById('progress').textContent = `${filled}/36`;
+            document.getElementById('progress').textContent = `${filled}/${total}`;
         }
 
         function updateTimer() {
@@ -602,22 +681,33 @@
         // Solution counter using backtracking
         function countSolutions(gridState, limit = 100) {
             let count = 0;
+            const size = getGridSize();
             
             function isValid(grid, row, col, num) {
                 // Check row
-                for (let c = 0; c < 6; c++) {
+                for (let c = 0; c < size; c++) {
                     if (grid[row][c] === num) return false;
                 }
                 // Check column
-                for (let r = 0; r < 6; r++) {
+                for (let r = 0; r < size; r++) {
                     if (grid[r][col] === num) return false;
                 }
-                // Check 2x3 box
-                const boxRow = Math.floor(row / 2) * 2;
-                const boxCol = Math.floor(col / 3) * 3;
-                for (let r = boxRow; r < boxRow + 2; r++) {
-                    for (let c = boxCol; c < boxCol + 3; c++) {
-                        if (grid[r][c] === num) return false;
+                // Check box (2x3 for easy, 3x3 for hard)
+                if (gameMode === 'easy') {
+                    const boxRow = Math.floor(row / 2) * 2;
+                    const boxCol = Math.floor(col / 3) * 3;
+                    for (let r = boxRow; r < boxRow + 2; r++) {
+                        for (let c = boxCol; c < boxCol + 3; c++) {
+                            if (grid[r][c] === num) return false;
+                        }
+                    }
+                } else {
+                    const boxRow = Math.floor(row / 3) * 3;
+                    const boxCol = Math.floor(col / 3) * 3;
+                    for (let r = boxRow; r < boxRow + 3; r++) {
+                        for (let c = boxCol; c < boxCol + 3; c++) {
+                            if (grid[r][c] === num) return false;
+                        }
                     }
                 }
                 return true;
@@ -627,10 +717,10 @@
                 if (count >= limit) return;
                 
                 // Find first empty cell
-                for (let row = 0; row < 6; row++) {
-                    for (let col = 0; col < 6; col++) {
+                for (let row = 0; row < size; row++) {
+                    for (let col = 0; col < size; col++) {
                         if (grid[row][col] === 0) {
-                            for (let num = 1; num <= 6; num++) {
+                            for (let num = 1; num <= size; num++) {
                                 if (isValid(grid, row, col, num)) {
                                     grid[row][col] = num;
                                     solve(grid);
@@ -657,11 +747,13 @@
 
         function validate() {
             const feedback = document.getElementById('feedback');
+            const size = getGridSize();
+            const total = size * size;
 
-            // Helper to check if array has all values 1-6
+            // Helper to check if array has all unique values 1-N
             function hasAllUnique(arr) {
                 const set = new Set(arr);
-                return set.size === 6 && arr.every(v => v >= 1 && v <= 6);
+                return set.size === size && arr.every(v => v >= 1 && v <= size);
             }
 
             // Helper to check if a cell has conflicts
@@ -670,21 +762,31 @@
                 if (value === 0) return false;
 
                 // Check row
-                for (let c = 0; c < 6; c++) {
+                for (let c = 0; c < size; c++) {
                     if (c !== col && grid[row][c] === value) return true;
                 }
 
                 // Check column
-                for (let r = 0; r < 6; r++) {
+                for (let r = 0; r < size; r++) {
                     if (r !== row && grid[r][col] === value) return true;
                 }
 
-                // Check 2x3 box
-                const boxRow = Math.floor(row / 2) * 2;
-                const boxCol = Math.floor(col / 3) * 3;
-                for (let r = boxRow; r < boxRow + 2; r++) {
-                    for (let c = boxCol; c < boxCol + 3; c++) {
-                        if ((r !== row || c !== col) && grid[r][c] === value) return true;
+                // Check box
+                if (gameMode === 'easy') {
+                    const boxRow = Math.floor(row / 2) * 2;
+                    const boxCol = Math.floor(col / 3) * 3;
+                    for (let r = boxRow; r < boxRow + 2; r++) {
+                        for (let c = boxCol; c < boxCol + 3; c++) {
+                            if ((r !== row || c !== col) && grid[r][c] === value) return true;
+                        }
+                    }
+                } else {
+                    const boxRow = Math.floor(row / 3) * 3;
+                    const boxCol = Math.floor(col / 3) * 3;
+                    for (let r = boxRow; r < boxRow + 3; r++) {
+                        for (let c = boxCol; c < boxCol + 3; c++) {
+                            if ((r !== row || c !== col) && grid[r][c] === value) return true;
+                        }
                     }
                 }
 
@@ -693,16 +795,16 @@
 
             // Count filled cells
             let filledCount = 0;
-            for (let row = 0; row < 6; row++) {
-                for (let col = 0; col < 6; col++) {
+            for (let row = 0; row < size; row++) {
+                for (let col = 0; col < size; col++) {
                     if (grid[row][col] !== 0) filledCount++;
                 }
             }
 
             // If not all filled, validate filled cells and mark correct ones green
-            if (filledCount < 36) {
-                for (let row = 0; row < 6; row++) {
-                    for (let col = 0; col < 6; col++) {
+            if (filledCount < total) {
+                for (let row = 0; row < size; row++) {
+                    for (let col = 0; col < size; col++) {
                         const cell = document.querySelector(`.sudoku-cell[data-row="${row}"][data-col="${col}"]`);
                         if (grid[row][col] !== 0 && !cell.classList.contains('fixed') && !cell.classList.contains('revealed')) {
                             if (!hasConflict(row, col)) {
@@ -716,7 +818,7 @@
 
             // All cells filled - validate complete grid
             // Check all rows
-            for (let row = 0; row < 6; row++) {
+            for (let row = 0; row < size; row++) {
                 if (!hasAllUnique(grid[row])) {
                     document.getElementById('fail-overlay').style.display = 'flex';
                     return;
@@ -724,9 +826,9 @@
             }
 
             // Check all columns
-            for (let col = 0; col < 6; col++) {
+            for (let col = 0; col < size; col++) {
                 const column = [];
-                for (let row = 0; row < 6; row++) {
+                for (let row = 0; row < size; row++) {
                     column.push(grid[row][col]);
                 }
                 if (!hasAllUnique(column)) {
@@ -735,18 +837,37 @@
                 }
             }
 
-            // Check all 2x3 boxes
-            for (let boxRow = 0; boxRow < 3; boxRow++) {
-                for (let boxCol = 0; boxCol < 2; boxCol++) {
-                    const box = [];
-                    for (let r = 0; r < 2; r++) {
-                        for (let c = 0; c < 3; c++) {
-                            box.push(grid[boxRow * 2 + r][boxCol * 3 + c]);
+            // Check all boxes
+            if (gameMode === 'easy') {
+                // 2x3 boxes for 6x6 grid
+                for (let boxRow = 0; boxRow < 3; boxRow++) {
+                    for (let boxCol = 0; boxCol < 2; boxCol++) {
+                        const box = [];
+                        for (let r = 0; r < 2; r++) {
+                            for (let c = 0; c < 3; c++) {
+                                box.push(grid[boxRow * 2 + r][boxCol * 3 + c]);
+                            }
+                        }
+                        if (!hasAllUnique(box)) {
+                            document.getElementById('fail-overlay').style.display = 'flex';
+                            return;
                         }
                     }
-                    if (!hasAllUnique(box)) {
-                        document.getElementById('fail-overlay').style.display = 'flex';
-                        return;
+                }
+            } else {
+                // 3x3 boxes for 9x9 grid
+                for (let boxRow = 0; boxRow < 3; boxRow++) {
+                    for (let boxCol = 0; boxCol < 3; boxCol++) {
+                        const box = [];
+                        for (let r = 0; r < 3; r++) {
+                            for (let c = 0; c < 3; c++) {
+                                box.push(grid[boxRow * 3 + r][boxCol * 3 + c]);
+                            }
+                        }
+                        if (!hasAllUnique(box)) {
+                            document.getElementById('fail-overlay').style.display = 'flex';
+                            return;
+                        }
                     }
                 }
             }
