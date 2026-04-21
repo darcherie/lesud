@@ -320,8 +320,14 @@
         let revealMode = false;
 
         function initGame() {
-            currentPuzzle = Math.floor(Math.random() * PUZZLES.length);
-            grid = PUZZLES[currentPuzzle].map(row => [...row]);
+            // Find a puzzle with at least one solution
+            let attempts = 0;
+            do {
+                currentPuzzle = Math.floor(Math.random() * PUZZLES.length);
+                grid = PUZZLES[currentPuzzle].map(row => [...row]);
+                attempts++;
+            } while (countSolutions(grid, 1) < 1 && attempts < PUZZLES.length);
+            
             selectedFish = null;
             selectedCell = null;
             revealMode = false;
@@ -728,10 +734,33 @@
                 document.getElementById('success-overlay').classList.add('show');
             }
         }
+        
+        function clearAll() {
+            // Clear all non-fixed cells
+            for (let row = 0; row < 6; row++) {
+                for (let col = 0; col < 6; col++) {
+                    if (PUZZLES[currentPuzzle][row][col] === 0) {
+                        grid[row][col] = 0;
+                        const cell = document.querySelector(`.sudoku-cell[data-row="${row}"][data-col="${col}"]`);
+                        cell.innerHTML = '';
+                        cell.classList.remove('correct', 'wrong', 'reveal-highlight');
+                    }
+                }
+            }
+            selectedFish = null;
+            selectedCell = null;
+            exitRevealMode();
+            updateProgress();
+            updateSolutionCount();
+            
+            // Clear palette selection
+            document.querySelectorAll('.fish-btn').forEach(btn => btn.classList.remove('selected'));
+        }
 
         // Event listeners
         document.getElementById('validate-btn').addEventListener('click', validate);
         document.getElementById('reveal-btn').addEventListener('click', revealCell);
+        document.getElementById('clear-btn').addEventListener('click', clearAll);
         document.getElementById('new-btn').addEventListener('click', () => {
             document.getElementById('success-overlay').classList.remove('show');
             document.getElementById('fail-overlay').style.display = 'none';
