@@ -298,7 +298,6 @@
                 <div class="stats-bar">
                     <span>Temps: <strong id="timer">00:00</strong></span>
                     <span>Progression: <strong id="progress">0/36</strong></span>
-                    <span>Solutions: <strong id="solutions">...</strong></span>
                     <div class="custom-select">
                         <button class="select-btn" id="mode-btn">Facile (6×6)</button>
                         <div class="select-options" id="mode-options">
@@ -671,7 +670,6 @@
             renderGrid();
             renderPalette();
             updateProgress();
-            updateSolutionCount();
 
             if (timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(updateTimer, 1000);
@@ -812,7 +810,6 @@
                     cell.classList.add('revealed');
                     cell.classList.remove('reveal-highlight');
                     updateProgress();
-                    updateSolutionCount();
                 }
                 
                 // Exit reveal mode
@@ -938,7 +935,6 @@
 
             cell.classList.remove('correct', 'wrong');
             updateProgress();
-            updateSolutionCount();
         }
 
         function updateProgress() {
@@ -1020,16 +1016,6 @@
             const gridCopy = gridState.map(row => [...row]);
             solve(gridCopy);
             return count >= limit ? `${limit}+` : count;
-        }
-
-        function updateSolutionCount() {
-            // Skip solution counting for 9x9 grids - too slow
-            if (gameMode === 'hard') {
-                document.getElementById('solutions').textContent = '?';
-                return;
-            }
-            const count = countSolutions(grid, 100);
-            document.getElementById('solutions').textContent = count;
         }
 
         function validate() {
@@ -1190,7 +1176,6 @@
             selectedCell = null;
             exitRevealMode();
             updateProgress();
-            updateSolutionCount();
             
             // Clear palette selection
             document.querySelectorAll('.fish-btn').forEach(btn => btn.classList.remove('selected'));
