@@ -614,7 +614,9 @@
             // Hard mode: use pre-made puzzles
             if (gameMode === 'easy') {
                 // Generate a new puzzle with unique solution
-                const result = generatePuzzle6x6(20 + Math.floor(Math.random() * 5)); // 20-24 clues
+                // Target 12-16 clues for medium difficulty (minimum is ~8 for 6x6)
+                const targetClues = 12 + Math.floor(Math.random() * 5); // 12-16 clues
+                const result = generatePuzzle6x6(targetClues);
                 grid = result.puzzle.map(row => [...row]);
             } else {
                 // Hard mode: use pre-made puzzles, avoid same puzzle twice in a row
