@@ -84,15 +84,15 @@
 
         /* 2x3 box borders for 6x6 grid */
         /* Rows 1-2: bottom border */
-        .sudoku-cell:nth-child(n+1):nth-child(-n+6) { border-bottom: 2px solid var(--primary); }
-        .sudoku-cell:nth-child(n+7):nth-child(-n+12) { border-bottom: 2px solid var(--primary); }
+        .sudoku-cell:nth-child(n+1):nth-child(-n+6) { border-bottom: 4px solid var(--primary); }
+        .sudoku-cell:nth-child(n+7):nth-child(-n+12) { border-bottom: 4px solid var(--primary); }
         /* Row 3: no bottom border (middle) */
-        .sudoku-cell:nth-child(n+13):nth-child(-n+18) { border-bottom: 2px solid var(--primary); }
+        .sudoku-cell:nth-child(n+13):nth-child(-n+18) { border-bottom: 4px solid var(--primary); }
         /* Row 6: no bottom border (last row) */
         .sudoku-cell:nth-child(n+31):nth-child(-n+36) { border-bottom: none; }
 
         /* Column borders for 2x3 boxes */
-        .sudoku-cell:nth-child(3n) { border-right: 2px solid var(--primary); }
+        .sudoku-cell:nth-child(3n) { border-right: 4px solid var(--primary); }
         .sudoku-cell:nth-child(6n) { border-right: none; }
 
         .fish-palette {
