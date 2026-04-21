@@ -844,6 +844,11 @@
         }
 
         function updateSolutionCount() {
+            // Skip solution counting for 9x9 grids - too slow
+            if (gameMode === 'hard') {
+                document.getElementById('solutions').textContent = '?';
+                return;
+            }
             const count = countSolutions(grid, 100);
             document.getElementById('solutions').textContent = count;
         }
