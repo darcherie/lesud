@@ -553,8 +553,9 @@
         }
         
         function findValidValue(row, col) {
+            const size = getGridSize();
             // Try each value and find one that leads to at least one solution
-            for (let val = 1; val <= 6; val++) {
+            for (let val = 1; val <= size; val++) {
                 if (isValidPlacement(row, col, val)) {
                     grid[row][col] = val;
                     const count = countSolutions(grid, 1);
@@ -565,7 +566,6 @@
                 }
             }
             // Fallback: just find any valid placement
-            const size = getGridSize();
             for (let val = 1; val <= size; val++) {
                 if (isValidPlacement(row, col, val)) {
                     return val;
@@ -886,10 +886,13 @@
         }
         
         function clearAll() {
+            const size = getGridSize();
+            const puzzles = getPuzzles();
+            
             // Clear all non-fixed cells
-            for (let row = 0; row < 6; row++) {
-                for (let col = 0; col < 6; col++) {
-                    if (PUZZLES[currentPuzzle][row][col] === 0) {
+            for (let row = 0; row < size; row++) {
+                for (let col = 0; col < size; col++) {
+                    if (puzzles[currentPuzzle][row][col] === 0) {
                         grid[row][col] = 0;
                         const cell = document.querySelector(`.sudoku-cell[data-row="${row}"][data-col="${col}"]`);
                         cell.innerHTML = '';
@@ -921,10 +924,18 @@
             document.getElementById('fail-overlay').style.display = 'none';
         });
 
+        // Mode change listener
+        document.getElementById('mode-select').addEventListener('change', (e) => {
+            gameMode = e.target.value;
+            initGame();
+        });
+
         // Keyboard support
         document.addEventListener('keydown', (e) => {
-            if (e.key >= '1' && e.key <= '6') {
-                selectFish(parseInt(e.key));
+            const size = getGridSize();
+            const keyNum = parseInt(e.key);
+            if (keyNum >= 1 && keyNum <= size) {
+                selectFish(keyNum);
             } else if (e.key === '0' || e.key === 'Delete' || e.key === 'Backspace') {
                 selectFish(0);
             }
