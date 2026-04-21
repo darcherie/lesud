@@ -456,37 +456,63 @@
 
         function validate() {
             const feedback = document.getElementById('feedback');
-            let correct = 0;
-            let total = 0;
 
+            // Check all cells are filled
             for (let row = 0; row < 6; row++) {
                 for (let col = 0; col < 6; col++) {
-                    if (!PUZZLES[currentPuzzle][row][col]) {
-                        total++;
-                        const cell = document.querySelector(`.sudoku-cell[data-row="${row}"][data-col="${col}"]`);
-                        
-                        if (grid[row][col] === SOLUTIONS[currentPuzzle][row][col]) {
-                            correct++;
-                            cell.classList.remove('wrong');
-                            cell.classList.add('correct');
-                        } else {
-                            cell.classList.remove('correct');
-                            if (grid[row][col] !== 0) {
-                                cell.classList.add('wrong');
-                            }
-                        }
+                    if (grid[row][col] === 0) {
+                        document.getElementById('fail-overlay').style.display = 'flex';
+                        return;
                     }
                 }
             }
 
-            if (correct === total) {
-                feedback.className = 'feedback success';
-                feedback.textContent = '🎉 Parfait ! Tous les poissons sont à leur place !';
-                gameOver(true);
-            } else {
-                // Show fail overlay
-                document.getElementById('fail-overlay').style.display = 'flex';
+            // Helper to check if array has all values 1-6
+            function hasAllUnique(arr) {
+                const set = new Set(arr);
+                return set.size === 6 && arr.every(v => v >= 1 && v <= 6);
             }
+
+            // Check all rows
+            for (let row = 0; row < 6; row++) {
+                if (!hasAllUnique(grid[row])) {
+                    document.getElementById('fail-overlay').style.display = 'flex';
+                    return;
+                }
+            }
+
+            // Check all columns
+            for (let col = 0; col < 6; col++) {
+                const column = [];
+                for (let row = 0; row < 6; row++) {
+                    column.push(grid[row][col]);
+                }
+                if (!hasAllUnique(column)) {
+                    document.getElementById('fail-overlay').style.display = 'flex';
+                    return;
+                }
+            }
+
+            // Check all 2x3 boxes
+            for (let boxRow = 0; boxRow < 3; boxRow++) {
+                for (let boxCol = 0; boxCol < 2; boxCol++) {
+                    const box = [];
+                    for (let r = 0; r < 2; r++) {
+                        for (let c = 0; c < 3; c++) {
+                            box.push(grid[boxRow * 2 + r][boxCol * 3 + c]);
+                        }
+                    }
+                    if (!hasAllUnique(box)) {
+                        document.getElementById('fail-overlay').style.display = 'flex';
+                        return;
+                    }
+                }
+            }
+
+            // All valid!
+            feedback.className = 'feedback success';
+            feedback.textContent = '🎉 Parfait ! Tous les poissons sont à leur place !';
+            gameOver(true);
         }
 
         function revealCell() {
