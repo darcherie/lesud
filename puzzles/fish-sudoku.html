@@ -466,13 +466,19 @@
             const size = getGridSize();
             const puzzles = getPuzzles();
             
-            // Find a puzzle with at least one solution
-            let attempts = 0;
-            do {
+            // For 6x6, validate puzzles have solutions. For 9x9, trust pre-made puzzles (validation is slow)
+            if (gameMode === 'easy') {
+                let attempts = 0;
+                do {
+                    currentPuzzle = Math.floor(Math.random() * puzzles.length);
+                    grid = puzzles[currentPuzzle].map(row => [...row]);
+                    attempts++;
+                } while (countSolutions(grid, 1) < 1 && attempts < puzzles.length);
+            } else {
+                // Hard mode: use pre-made puzzles that are known to have unique solutions
                 currentPuzzle = Math.floor(Math.random() * puzzles.length);
                 grid = puzzles[currentPuzzle].map(row => [...row]);
-                attempts++;
-            } while (countSolutions(grid, 1) < 1 && attempts < puzzles.length);
+            }
             
             selectedFish = null;
             selectedCell = null;
