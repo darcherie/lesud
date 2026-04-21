@@ -103,16 +103,7 @@
             margin: 0 auto;
         }
 
-        /* 2x3 box borders for 6x6 grid */
-        /* Horizontal borders after rows 2 and 4 (separating 2x3 boxes vertically) */
-        .sudoku-cell:nth-child(n+7):nth-child(-n+12) { border-bottom: 4px solid var(--primary); }
-        .sudoku-cell:nth-child(n+19):nth-child(-n+24) { border-bottom: 4px solid var(--primary); }
-        /* Row 6: no bottom border (last row) */
-        .sudoku-cell:nth-child(n+31):nth-child(-n+36) { border-bottom: none; }
-
-        /* Vertical border after column 3 (separating 2x3 boxes horizontally) */
-        .sudoku-cell:nth-child(3n) { border-right: 4px solid var(--primary); }
-        .sudoku-cell:nth-child(6n) { border-right: none; }
+        /* Box borders are added dynamically based on grid size */
 
         .fish-palette {
             display: flex;
@@ -430,14 +421,12 @@
                 `;
             } else {
                 // 9x9 grid with 3x3 boxes
+                // Horizontal borders after rows 3 and 6
                 styleEl.textContent = `
-                    .sudoku-cell:nth-child(n+1):nth-child(-n+9) { border-bottom: 4px solid var(--primary); }
                     .sudoku-cell:nth-child(n+19):nth-child(-n+27) { border-bottom: 4px solid var(--primary); }
-                    .sudoku-cell:nth-child(n+55):nth-child(-n+63) { border-bottom: 4px solid var(--primary); }
-                    .sudoku-cell:nth-child(n+73):nth-child(-n+81) { border-bottom: none; }
+                    .sudoku-cell:nth-child(n+46):nth-child(-n+54) { border-bottom: 4px solid var(--primary); }
                     .sudoku-cell:nth-child(9n+3) { border-right: 4px solid var(--primary); }
                     .sudoku-cell:nth-child(9n+6) { border-right: 4px solid var(--primary); }
-                    .sudoku-cell:nth-child(9n) { border-right: none; }
                 `;
             }
             document.head.appendChild(styleEl);
