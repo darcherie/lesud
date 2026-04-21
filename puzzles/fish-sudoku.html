@@ -171,7 +171,12 @@
             box-shadow: 4px 4px 0 #3730a3;
         }
 
-        .mode-select {
+        .custom-select {
+            position: relative;
+            display: inline-block;
+        }
+
+        .select-btn {
             background: linear-gradient(135deg, #6366f1, #4f46e5);
             color: white;
             border: none;
@@ -181,24 +186,63 @@
             border-radius: 8px;
             cursor: pointer;
             box-shadow: 3px 3px 0 #3730a3;
-            appearance: none;
-            -webkit-appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='white' d='M6 8L2 4h8z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 1rem center;
-            padding-right: 2.5rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
-        .mode-select:hover {
+        .select-btn:hover {
             transform: translate(-1px, -1px);
             box-shadow: 4px 4px 0 #3730a3;
         }
 
-        .mode-select option {
-            background: #4f46e5;
+        .select-btn::after {
+            content: '▼';
+            font-size: 0.5rem;
+        }
+
+        .select-btn.open::after {
+            content: '▲';
+        }
+
+        .select-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 0.5rem;
+            background: linear-gradient(135deg, #4f46e5, #3730a3);
+            border-radius: 8px;
+            box-shadow: 3px 3px 0 #1e1b4b;
+            display: none;
+            z-index: 100;
+            min-width: 100%;
+        }
+
+        .select-options.show {
+            display: block;
+        }
+
+        .select-option {
+            display: block;
+            background: transparent;
             color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
             font-family: 'Press Start 2P', monospace;
-            padding: 0.5rem;
+            font-size: 0.5rem;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+            transition: background 0.2s;
+        }
+
+        .select-option:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .select-option.selected {
+            background: rgba(255, 255, 255, 0.2);
         }
 
         .stats-bar {
@@ -246,10 +290,13 @@
                     <span>Temps: <strong id="timer">00:00</strong></span>
                     <span>Progression: <strong id="progress">0/36</strong></span>
                     <span>Solutions: <strong id="solutions">...</strong></span>
-                    <select id="mode-select" class="mode-select">
-                        <option value="easy">Facile (6×6)</option>
-                        <option value="hard">Difficile (9×9)</option>
-                    </select>
+                    <div class="custom-select">
+                        <button class="select-btn" id="mode-btn">Facile (6×6)</button>
+                        <div class="select-options" id="mode-options">
+                            <button class="select-option selected" data-value="easy">Facile (6×6)</button>
+                            <button class="select-option" data-value="hard">Difficile (9×9)</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="sudoku-grid" id="sudoku-grid"></div>
@@ -951,13 +998,40 @@
         document.getElementById('new-btn').addEventListener('click', () => {
             document.getElementById('success-overlay').classList.remove('show');
             document.getElementById('fail-overlay').style.display = 'none';
-            // Read current mode from select and update gameMode before generating new puzzle
-            gameMode = document.getElementById('mode-select').value;
             initGame();
         });
 
         document.getElementById('continue-btn').addEventListener('click', () => {
             document.getElementById('fail-overlay').style.display = 'none';
+        });
+
+        // Custom dropdown
+        const modeBtn = document.getElementById('mode-btn');
+        const modeOptions = document.getElementById('mode-options');
+        
+        modeBtn.addEventListener('click', () => {
+            modeBtn.classList.toggle('open');
+            modeOptions.classList.toggle('show');
+        });
+
+        document.querySelectorAll('.select-option').forEach(option => {
+            option.addEventListener('click', () => {
+                const value = option.dataset.value;
+                gameMode = value;
+                modeBtn.textContent = option.textContent;
+                document.querySelectorAll('.select-option').forEach(o => o.classList.remove('selected'));
+                option.classList.add('selected');
+                modeBtn.classList.remove('open');
+                modeOptions.classList.remove('show');
+            });
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.custom-select')) {
+                modeBtn.classList.remove('open');
+                modeOptions.classList.remove('show');
+            }
         });
 
         // Keyboard support
