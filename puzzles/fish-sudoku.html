@@ -457,22 +457,63 @@
         function validate() {
             const feedback = document.getElementById('feedback');
 
-            // Check all cells are filled
-            for (let row = 0; row < 6; row++) {
-                for (let col = 0; col < 6; col++) {
-                    if (grid[row][col] === 0) {
-                        document.getElementById('fail-overlay').style.display = 'flex';
-                        return;
-                    }
-                }
-            }
-
             // Helper to check if array has all values 1-6
             function hasAllUnique(arr) {
                 const set = new Set(arr);
                 return set.size === 6 && arr.every(v => v >= 1 && v <= 6);
             }
 
+            // Helper to check if a cell has conflicts
+            function hasConflict(row, col) {
+                const value = grid[row][col];
+                if (value === 0) return false;
+
+                // Check row
+                for (let c = 0; c < 6; c++) {
+                    if (c !== col && grid[row][c] === value) return true;
+                }
+
+                // Check column
+                for (let r = 0; r < 6; r++) {
+                    if (r !== row && grid[r][col] === value) return true;
+                }
+
+                // Check 2x3 box
+                const boxRow = Math.floor(row / 2) * 2;
+                const boxCol = Math.floor(col / 3) * 3;
+                for (let r = boxRow; r < boxRow + 2; r++) {
+                    for (let c = boxCol; c < boxCol + 3; c++) {
+                        if ((r !== row || c !== col) && grid[r][c] === value) return true;
+                    }
+                }
+
+                return false;
+            }
+
+            // Count filled cells
+            let filledCount = 0;
+            for (let row = 0; row < 6; row++) {
+                for (let col = 0; col < 6; col++) {
+                    if (grid[row][col] !== 0) filledCount++;
+                }
+            }
+
+            // If not all filled, validate filled cells and mark correct ones green
+            if (filledCount < 36) {
+                for (let row = 0; row < 6; row++) {
+                    for (let col = 0; col < 6; col++) {
+                        const cell = document.querySelector(`.sudoku-cell[data-row="${row}"][data-col="${col}"]`);
+                        if (grid[row][col] !== 0 && !cell.classList.contains('fixed') && !cell.classList.contains('revealed')) {
+                            if (!hasConflict(row, col)) {
+                                cell.classList.add('correct');
+                            }
+                        }
+                    }
+                }
+                return;
+            }
+
+            // All cells filled - validate complete grid
             // Check all rows
             for (let row = 0; row < 6; row++) {
                 if (!hasAllUnique(grid[row])) {
