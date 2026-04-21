@@ -82,12 +82,16 @@
             margin: 0 auto;
         }
 
-        /* 3x3 box borders for 6x6 grid (4 quadrants) */
-        /* Horizontal border after row 3 (cells 12-17 have bottom border) */
-        .sudoku-cell:nth-child(n+12):nth-child(-n+17) { border-bottom: 4px solid var(--primary); }
+        /* 2x3 box borders for 6x6 grid */
+        /* Horizontal borders after rows 2 and 4 (separating 2x3 boxes vertically) */
+        .sudoku-cell:nth-child(n+7):nth-child(-n+12) { border-bottom: 4px solid var(--primary); }
+        .sudoku-cell:nth-child(n+19):nth-child(-n+24) { border-bottom: 4px solid var(--primary); }
+        /* Row 6: no bottom border (last row) */
+        .sudoku-cell:nth-child(n+31):nth-child(-n+36) { border-bottom: none; }
 
-        /* Vertical border after column 3 (cells at positions 3, 9, 15, 21, 27, 33) */
-        .sudoku-cell:nth-child(6n+3) { border-right: 4px solid var(--primary); }
+        /* Vertical border after column 3 (separating 2x3 boxes horizontally) */
+        .sudoku-cell:nth-child(3n) { border-right: 4px solid var(--primary); }
+        .sudoku-cell:nth-child(6n) { border-right: none; }
 
         .fish-palette {
             display: flex;
@@ -192,7 +196,7 @@
         <main class="puzzle-main">
             <header>
                 <h1>Sudoku poisson de la Major</h1>
-                <p class="subtitle" style="max-width: 860px; margin: 0 auto;">Chaque ligne, colonne, et carré 3×3 doit avoir une de chaque couleur de poissons (pas deux !)</p>
+                <p class="subtitle" style="max-width: 860px; margin: 0 auto;">Chaque ligne, colonne, et carré doit avoir une de chaque couleur de poissons (pas deux !)</p>
             </header>
 
             <div class="sudoku-container">
@@ -489,10 +493,10 @@
             for (let r = 0; r < 6; r++) {
                 if (r !== row && grid[r][col] === val) return false;
             }
-            // Check 3x3 box
-            const boxRow = Math.floor(row / 3) * 3;
+            // Check 2x3 box (6 cells for 6 values)
+            const boxRow = Math.floor(row / 2) * 2;
             const boxCol = Math.floor(col / 3) * 3;
-            for (let r = boxRow; r < boxRow + 3; r++) {
+            for (let r = boxRow; r < boxRow + 2; r++) {
                 for (let c = boxCol; c < boxCol + 3; c++) {
                     if ((r !== row || c !== col) && grid[r][c] === val) return false;
                 }
@@ -583,10 +587,10 @@
                 for (let r = 0; r < 6; r++) {
                     if (grid[r][col] === num) return false;
                 }
-                // Check 3x3 box
-                const boxRow = Math.floor(row / 3) * 3;
+                // Check 2x3 box
+                const boxRow = Math.floor(row / 2) * 2;
                 const boxCol = Math.floor(col / 3) * 3;
-                for (let r = boxRow; r < boxRow + 3; r++) {
+                for (let r = boxRow; r < boxRow + 2; r++) {
                     for (let c = boxCol; c < boxCol + 3; c++) {
                         if (grid[r][c] === num) return false;
                     }
@@ -650,10 +654,10 @@
                     if (r !== row && grid[r][col] === value) return true;
                 }
 
-                // Check 3x3 box
-                const boxRow = Math.floor(row / 3) * 3;
+                // Check 2x3 box
+                const boxRow = Math.floor(row / 2) * 2;
                 const boxCol = Math.floor(col / 3) * 3;
-                for (let r = boxRow; r < boxRow + 3; r++) {
+                for (let r = boxRow; r < boxRow + 2; r++) {
                     for (let c = boxCol; c < boxCol + 3; c++) {
                         if ((r !== row || c !== col) && grid[r][c] === value) return true;
                     }
@@ -706,13 +710,13 @@
                 }
             }
 
-            // Check all 3x3 boxes (4 quadrants)
-            for (let boxRow = 0; boxRow < 2; boxRow++) {
+            // Check all 2x3 boxes
+            for (let boxRow = 0; boxRow < 3; boxRow++) {
                 for (let boxCol = 0; boxCol < 2; boxCol++) {
                     const box = [];
-                    for (let r = 0; r < 3; r++) {
+                    for (let r = 0; r < 2; r++) {
                         for (let c = 0; c < 3; c++) {
-                            box.push(grid[boxRow * 3 + r][boxCol * 3 + c]);
+                            box.push(grid[boxRow * 2 + r][boxCol * 3 + c]);
                         }
                     }
                     if (!hasAllUnique(box)) {
