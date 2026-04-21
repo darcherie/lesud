@@ -56,6 +56,15 @@
             cursor: default;
         }
 
+        .sudoku-cell.reveal-highlight {
+            background: rgba(245, 158, 11, 0.3);
+            cursor: pointer;
+        }
+
+        .sudoku-cell.reveal-highlight:hover {
+            background: rgba(245, 158, 11, 0.5);
+        }
+
         .sudoku-cell.correct {
             background: rgba(34, 197, 94, 0.3);
         }
@@ -313,13 +322,19 @@
         let selectedCell = null;
         let startTime = Date.now();
         let timerInterval = null;
+        let revealMode = false;
 
         function initGame() {
             currentPuzzle = Math.floor(Math.random() * PUZZLES.length);
             grid = PUZZLES[currentPuzzle].map(row => [...row]);
             selectedFish = null;
             selectedCell = null;
+            revealMode = false;
             startTime = Date.now();
+
+            // Reset reveal button style
+            document.getElementById('reveal-btn').style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+            document.getElementById('reveal-btn').style.boxShadow = '3px 3px 0 #b45309';
 
             renderGrid();
             renderPalette();
@@ -406,6 +421,29 @@
             document.querySelectorAll('.sudoku-cell').forEach(c => c.classList.remove('selected'));
             
             const cell = document.querySelector(`.sudoku-cell[data-row="${row}"][data-col="${col}"]`);
+            
+            // Handle reveal mode
+            if (revealMode) {
+                if (cell.classList.contains('fixed') || cell.classList.contains('revealed')) {
+                    return; // Can't reveal already filled cells
+                }
+                
+                // Find a valid value for this cell
+                const validValue = findValidValue(row, col);
+                if (validValue) {
+                    grid[row][col] = validValue;
+                    cell.innerHTML = getFishDisplay(validValue);
+                    cell.classList.add('revealed');
+                    cell.classList.remove('reveal-highlight');
+                    updateProgress();
+                    updateSolutionCount();
+                }
+                
+                // Exit reveal mode
+                exitRevealMode();
+                return;
+            }
+            
             if (cell.classList.contains('fixed') || cell.classList.contains('revealed')) {
                 return;
             }
@@ -418,6 +456,80 @@
             cell.classList.add('selected');
             selectedCell = { row, col };
             placeFish(row, col);
+        }
+        
+        function findValidValue(row, col) {
+            // Try each value and find one that leads to at least one solution
+            for (let val = 1; val <= 6; val++) {
+                if (isValidPlacement(row, col, val)) {
+                    grid[row][col] = val;
+                    const count = countSolutions(grid, 1);
+                    grid[row][col] = 0;
+                    if (count >= 1) {
+                        return val;
+                    }
+                }
+            }
+            // Fallback: just find any valid placement
+            for (let val = 1; val <= 6; val++) {
+                if (isValidPlacement(row, col, val)) {
+                    return val;
+                }
+            }
+            return null;
+        }
+        
+        function isValidPlacement(row, col, val) {
+            // Check row
+            for (let c = 0; c < 6; c++) {
+                if (c !== col && grid[row][c] === val) return false;
+            }
+            // Check column
+            for (let r = 0; r < 6; r++) {
+                if (r !== row && grid[r][col] === val) return false;
+            }
+            // Check 2x3 box
+            const boxRow = Math.floor(row / 2) * 2;
+            const boxCol = Math.floor(col / 3) * 3;
+            for (let r = boxRow; r < boxRow + 2; r++) {
+                for (let c = boxCol; c < boxCol + 3; c++) {
+                    if ((r !== row || c !== col) && grid[r][c] === val) return false;
+                }
+            }
+            return true;
+        }
+        
+        function enterRevealMode() {
+            revealMode = true;
+            document.getElementById('reveal-btn').style.background = 'linear-gradient(135deg, #c2410c, #9a3412)';
+            document.getElementById('reveal-btn').style.boxShadow = '3px 3px 0 #7c2d12';
+            
+            // Highlight unfilled cells
+            document.querySelectorAll('.sudoku-cell').forEach(cell => {
+                const row = parseInt(cell.dataset.row);
+                const col = parseInt(cell.dataset.col);
+                if (grid[row][col] === 0 && !cell.classList.contains('fixed') && !cell.classList.contains('revealed')) {
+                    cell.classList.add('reveal-highlight');
+                }
+            });
+        }
+        
+        function exitRevealMode() {
+            revealMode = false;
+            document.getElementById('reveal-btn').style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+            document.getElementById('reveal-btn').style.boxShadow = '3px 3px 0 #b45309';
+            
+            document.querySelectorAll('.sudoku-cell').forEach(cell => {
+                cell.classList.remove('reveal-highlight');
+            });
+        }
+        
+        function revealCell() {
+            if (revealMode) {
+                exitRevealMode();
+            } else {
+                enterRevealMode();
+            }
         }
 
         function placeFish(row, col) {
@@ -613,38 +725,6 @@
             feedback.className = 'feedback success';
             feedback.textContent = '🎉 Parfait ! Tous les poissons sont à leur place !';
             gameOver(true);
-        }
-
-        function revealCell() {
-            if (selectedCell === null) {
-                const feedback = document.getElementById('feedback');
-                feedback.className = 'feedback hint';
-                feedback.textContent = 'Sélectionne une case d\'abord...';
-                return;
-            }
-
-            const { row, col } = selectedCell;
-            const cell = document.querySelector(`.sudoku-cell[data-row="${row}"][data-col="${col}"]`);
-            
-            if (cell.classList.contains('fixed') || cell.classList.contains('revealed')) {
-                const feedback = document.getElementById('feedback');
-                feedback.className = 'feedback hint';
-                feedback.textContent = 'Cette case est déjà remplie...';
-                return;
-            }
-
-            // Reveal the answer
-            const answer = SOLUTIONS[currentPuzzle][row][col];
-            grid[row][col] = answer;
-            cell.innerHTML = getFishDisplay(answer);
-            cell.classList.remove('wrong');
-            cell.classList.add('revealed');
-            
-            const feedback = document.getElementById('feedback');
-            feedback.className = 'feedback hint';
-            feedback.textContent = 'Case révélée !';
-            
-            updateProgress();
         }
 
         function gameOver(won) {
