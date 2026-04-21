@@ -396,11 +396,7 @@
             if (fishId > 0) {
                 document.querySelector(`.fish-btn[data-id="${fishId - 1}"]`)?.classList.add('selected');
             }
-
-            // If a cell is selected and fish is selected, fill it
-            if (selectedCell !== null && selectedFish !== null) {
-                placeFish(selectedCell.row, selectedCell.col);
-            }
+            // Don't auto-place - wait for cell click
         }
 
         function selectCell(row, col) {
