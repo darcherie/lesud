@@ -291,7 +291,8 @@ footer {
 
 .success-box p {
     color: #e2e8f0;
-    font-size: 0.9rem;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.7rem;
     line-height: 1.6;
     margin-bottom: 1.5rem;
 }
