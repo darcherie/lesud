@@ -408,13 +408,14 @@
                 return;
             }
 
+            // Must have a fish selected first
+            if (selectedFish === null) {
+                return;
+            }
+
             cell.classList.add('selected');
             selectedCell = { row, col };
-
-            // If fish already selected, place it
-            if (selectedFish !== null) {
-                placeFish(row, col);
-            }
+            placeFish(row, col);
         }
 
         function placeFish(row, col) {
