@@ -483,7 +483,8 @@
                     currentPuzzle = Math.floor(Math.random() * puzzles.length);
                     grid = puzzles[currentPuzzle].map(row => [...row]);
                     attempts++;
-                } while (countSolutions(grid, 1) < 1 && attempts < puzzles.length);
+                } while ((countSolutions(grid, 1) < 1 || currentPuzzle === lastPuzzle.easy) && attempts < puzzles.length * 2);
+                lastPuzzle.easy = currentPuzzle;
             } else {
                 // Hard mode: use pre-made puzzles, avoid same puzzle twice in a row
                 let newIndex;

@@ -677,6 +677,78 @@
                     document.getElementById(`${tab}-clues`).classList.add('active');
                 });
             });
+            
+            // Save progress to localStorage
+            function saveProgress() {
+                const inputs = document.querySelectorAll('.grid-cell.active input');
+                const progress = {};
+                inputs.forEach(input => {
+                    if (input.value) {
+                        progress[`${input.dataset.row}-${input.dataset.col}`] = input.value.toUpperCase();
+                    }
+                });
+                localStorage.setItem('mots-fleches-progress', JSON.stringify(progress));
+            }
+            
+            // Load progress from localStorage
+            function loadProgress() {
+                const saved = localStorage.getItem('mots-fleches-progress');
+                if (saved) {
+                    try {
+                        const progress = JSON.parse(saved);
+                        Object.entries(progress).forEach(([key, value]) => {
+                            const [row, col] = key.split('-');
+                            const input = document.querySelector(`input[data-row="${row}"][data-col="${col}"]`);
+                            if (input && !input.disabled) {
+                                input.value = value;
+                            }
+                        });
+                    } catch (e) {
+                        console.error('Error loading progress:', e);
+                    }
+                }
+            }
+            
+            // Save on every input
+            document.querySelectorAll('.grid-cell.active input').forEach(input => {
+                input.addEventListener('input', saveProgress);
+            });
+            
+            // Load saved progress
+            loadProgress();
+            
+            // Clear progress when puzzle is completed
+            const originalCheckAnswers = checkAnswers;
+            checkAnswers = function() {
+                const inputs = document.querySelectorAll('.grid-cell.active input');
+                let correct = 0;
+                const total = inputs.length;
+                
+                inputs.forEach(input => {
+                    const userAnswer = input.value.toUpperCase();
+                    const answer = input.dataset.answer;
+                    
+                    if (userAnswer === answer) {
+                        input.classList.add('correct');
+                        input.disabled = true;
+                        input.readOnly = true;
+                        correct++;
+                    } else {
+                        input.classList.remove('correct');
+                    }
+                });
+                
+                const feedback = document.getElementById('feedback');
+                
+                if (correct === total) {
+                    localStorage.removeItem('mots-fleches-progress');
+                    document.getElementById('success-overlay').classList.add('show');
+                    document.getElementById('check-btn').disabled = true;
+                } else {
+                    feedback.className = 'feedback error';
+                    feedback.textContent = `${correct}/${total} lettres correctes. Continue...`;
+                }
+            };
         });
     </script>
 
