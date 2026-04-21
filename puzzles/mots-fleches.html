@@ -419,10 +419,6 @@
 
             // Move to next empty cell in current word
             moveToNextEmptyInWord(row, col);
-
-            const feedback = document.getElementById('feedback');
-            feedback.className = 'feedback hint';
-            feedback.textContent = 'Lettre révélée !';
         }
 
         function moveToNextEmptyInWord(currentRow, currentCol) {
@@ -621,6 +617,10 @@
                     e.target.select();
                     highlightCurrentWord();
                 }
+                // Clear feedback when clicking anywhere
+                const feedback = document.getElementById('feedback');
+                feedback.className = 'feedback';
+                feedback.textContent = '';
             });
             
             // Arrow key navigation
