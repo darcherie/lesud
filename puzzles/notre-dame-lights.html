@@ -706,8 +706,8 @@
                 }
             });
 
-            // Hit if beam is within 50px of target zone center
-            if (closestBeam && closestDiff < 50) {
+            // Hit if beam is within 100px of target zone center
+            if (closestBeam && closestDiff < 100) {
                 closestBeam.hit = true;
                 closestBeam.element.remove();
                 beams.splice(beams.indexOf(closestBeam), 1);
@@ -715,7 +715,7 @@
                 // Flash the beam source on Notre-Dame
                 flashBeamSource(closestBeam.lane);
 
-                if (closestDiff < 20) {
+                if (closestDiff < 40) {
                     score += 100 * (1 + combo * 0.1);
                     showFeedback('perfect', lane);
                 } else {
