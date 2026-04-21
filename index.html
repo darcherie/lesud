@@ -227,43 +227,62 @@
         const frameDuration = 500;
         let animationInterval = null;
         
-        // Preload all frames
+        // Preload all frames with promise-based loading
         const cachedImages = [];
-        let loadedCount = 0;
         
-        frames.forEach((frame, i) => {
-            const img = new Image();
-            img.onload = () => {
-                cachedImages[i] = img;
-                loadedCount++;
-            };
-            img.src = `assets/images/${frame}`;
-        });
+        function preloadImages() {
+            return Promise.all(frames.map((frame, i) => {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        cachedImages[i] = img;
+                        resolve();
+                    };
+                    img.onerror = () => {
+                        console.error(`Failed to load ${frame}`);
+                        resolve();
+                    };
+                    img.src = `assets/images/${frame}`;
+                });
+            }));
+        }
         
         function startAnimation() {
             const bgElement = document.querySelector('.pixel-bg');
-            if (!bgElement) return;
+            if (!bgElement || !cachedImages[0]) return;
             
             // Clear any existing interval
             if (animationInterval) clearInterval(animationInterval);
             
-            // Show first frame
-            bgElement.style.backgroundImage = `url('assets/images/${frames[0]}')`;
+            // Set first frame
+            bgElement.style.backgroundImage = `url('${cachedImages[0].src}')`;
             
-            // Start cycling
-            animationInterval = setInterval(() => {
-                currentFrame = (currentFrame + 1) % frames.length;
-                bgElement.style.backgroundImage = `url('assets/images/${frames[currentFrame]}')`;
-            }, frameDuration);
+            // Start cycling - use requestAnimationFrame timing for smoother transitions
+            let lastTime = performance.now();
+            
+            function animateFrame(timestamp) {
+                if (timestamp - lastTime >= frameDuration) {
+                    currentFrame = (currentFrame + 1) % frames.length;
+                    if (cachedImages[currentFrame]) {
+                        bgElement.style.backgroundImage = `url('${cachedImages[currentFrame].src}')`;
+                    }
+                    lastTime = timestamp;
+                }
+                animationInterval = requestAnimationFrame(animateFrame);
+            }
+            
+            animationInterval = requestAnimationFrame(animateFrame);
         }
         
-        // Start on page load
-        document.addEventListener('DOMContentLoaded', startAnimation);
+        // Wait for all images to load before starting
+        preloadImages().then(() => {
+            startAnimation();
+        });
         
         // Handle browser back/forward navigation (bfcache)
         window.addEventListener('pageshow', (event) => {
             if (event.persisted) {
-                startAnimation();
+                preloadImages().then(startAnimation);
             }
         });
 
