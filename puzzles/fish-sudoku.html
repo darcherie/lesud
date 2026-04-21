@@ -1178,7 +1178,7 @@
                         grid[row][col] = 0;
                         const cell = document.querySelector(`.sudoku-cell[data-row="${row}"][data-col="${col}"]`);
                         cell.innerHTML = '';
-                        cell.classList.remove('correct', 'wrong', 'reveal-highlight', 'selected');
+                        cell.classList.remove('correct', 'wrong', 'reveal-highlight', 'selected', 'revealed');
                     }
                 }
             }
